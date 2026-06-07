@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>태림이를 위한 아빠의 사랑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Noto Sans KR","Pretendard",sans-serif;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,200,100,.25), transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(100,150,255,.25), transparent 50%),
+      linear-gradient(135deg,#fff8e8 0%,#e8f1ff 100%);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:40px 20px;
+  }
+  .heart-title{
+    font-family:"Fredoka","Noto Sans KR",sans-serif;
+    font-weight:900;
+    font-size:clamp(28px,5vw,44px);
+    color:#d83a3a;
+    text-align:center;
+    margin-bottom:10px;
+    letter-spacing:-.02em;
+    text-shadow:0 4px 12px rgba(216,58,58,.15);
+  }
+  .subtitle{
+    text-align:center;
+    color:#7a6850;
+    font-size:clamp(13px,2vw,16px);
+    font-weight:600;
+    margin-bottom:50px;
+  }
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+    gap:24px;
+    max-width:1100px;
+    width:100%;
+  }
+  .card{
+    background:#fff;
+    border-radius:28px;
+    padding:32px 24px;
+    text-decoration:none;
+    color:inherit;
+    box-shadow:0 12px 32px rgba(50,80,130,.12);
+    border:3px solid transparent;
+    transition:all .25s ease;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(135deg,var(--c1,#1d63ff),var(--c2,#e74b4b));
+    opacity:0;
+    transition:opacity .25s;
+  }
+  .card:hover{
+    transform:translateY(-8px) scale(1.02);
+    box-shadow:0 20px 48px rgba(50,80,130,.22);
+    border-color:var(--c1,#1d63ff);
+  }
+  .card:hover .card-icon{transform:scale(1.1) rotate(-3deg)}
+  .card.disabled{
+    opacity:.65;
+    cursor:not-allowed;
+  }
+  .card.disabled:hover{
+    transform:none;
+    box-shadow:0 12px 32px rgba(50,80,130,.12);
+    border-color:transparent;
+  }
+  .card-num{
+    position:absolute;
+    top:14px;left:18px;
+    font-family:"Fredoka",sans-serif;
+    font-weight:700;
+    font-size:14px;
+    color:var(--c1,#1d63ff);
+    opacity:.7;
+  }
+  .card-icon{
+    font-size:80px;
+    margin-bottom:18px;
+    line-height:1;
+    transition:transform .25s ease;
+    filter:drop-shadow(0 6px 12px rgba(0,0,0,.1));
+  }
+  .card-title{
+    font-family:"Fredoka","Noto Sans KR",sans-serif;
+    font-weight:900;
+    font-size:22px;
+    margin-bottom:8px;
+    color:#1a2842;
+    letter-spacing:-.01em;
+  }
+  .card-ko{
+    font-size:15px;
+    color:#5a6b88;
+    font-weight:700;
+    margin-bottom:18px;
+  }
+  .card-desc{
+    font-size:13px;
+    color:#7a8a9e;
+    line-height:1.55;
+    font-weight:500;
+  }
+  .card-cta{
+    margin-top:auto;
+    padding-top:18px;
+    width:100%;
+  }
+  .card-btn{
+    display:inline-block;
+    padding:11px 22px;
+    border-radius:999px;
+    background:linear-gradient(135deg,var(--c1,#1d63ff),var(--c2,#e74b4b));
+    color:#fff;
+    font-weight:900;
+    font-size:13px;
+    letter-spacing:.05em;
+    box-shadow:0 6px 14px rgba(0,0,0,.15);
+  }
+  .card.disabled .card-btn{
+    background:linear-gradient(135deg,#9aa5b8,#cdd5e3);
+  }
+  .card1{--c1:#1d63ff;--c2:#7c3aed}
+  .card2{--c1:#ffc947;--c2:#ff8b3d}
+  .card3{--c1:#ff5ca8;--c2:#7c3aed}
+  .footer-note{
+    margin-top:50px;
+    text-align:center;
+    color:#a8a899;
+    font-size:12px;
+    font-weight:500;
+  }
+  .footer-note .heart{color:#d83a3a;font-size:14px}
+</style>
+</head>
+<body>
+  <h1 class="heart-title">🦋 태림이를 위한 아빠의 사랑 💖</h1>
+  <p class="subtitle">아빠가 만든 영어 학습 프로그램 모음</p>
+
+  <div class="cards">
+    <a href="transformer.html" class="card card1">
+      <div class="card-num">01</div>
+      <div class="card-icon">🤖</div>
+      <div class="card-title">Transformer English Lab</div>
+      <div class="card-ko">트랜스포머 영어 학습</div>
+      <div class="card-desc">
+        11명의 트랜스포머 캐릭터와 함께 영어 자기소개를 따라 말해보고,<br>
+        성공하면 멋진 변신 영상을 볼 수 있어요!
+      </div>
+      <div class="card-cta">
+        <span class="card-btn">시작하기 ▶</span>
+      </div>
+    </a>
+
+    <a href="storybook-bumblebee.html" class="card card2">
+      <div class="card-num">02</div>
+      <div class="card-icon">📖</div>
+      <div class="card-title">Storybook: Bumblebee</div>
+      <div class="card-ko">스토리북 (범블비와 여행)</div>
+      <div class="card-desc">
+        범블비와 함께 떠나는 모험 이야기를 따라 읽어보세요.<br>
+        한 문장씩 따라하면 AI가 다음 문장을 읽어줘요!
+      </div>
+      <div class="card-cta">
+        <span class="card-btn">읽기 시작 ▶</span>
+      </div>
+    </a>
+
+    <a href="storybook-pokemon.html" class="card card3">
+      <div class="card-num">03</div>
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Storybook: Pokémon</div>
+      <div class="card-ko">스토리북 (이찬이 형과 포켓몬 여행)</div>
+      <div class="card-desc">
+        이찬이 형과 함께 포켓몬 세계로 떠나요!<br>
+        피카츄와 파이리를 만나는 신나는 모험이에요!
+      </div>
+      <div class="card-cta">
+        <span class="card-btn">읽기 시작 ▶</span>
+      </div>
+    </a>
+  </div>
+
+  <p class="footer-note">
+    Made with <span class="heart">❤️</span> by 아빠 — for 태림
+  </p>
+</body>
+</html>
