@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>범블봇과 영어 대화 v6</title>
+<title>범블봇과 영어 대화 v7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
 
   .main{
     flex:1;display:flex;flex-direction:column;align-items:center;
-    padding:24px 18px;max-width:760px;margin:0 auto;width:100%;gap:18px;
+    padding:24px 18px;max-width:1080px;margin:0 auto;width:100%;gap:18px;
   }
 
   /* 범블봇 캐릭터 (애니메이션 로봇) */
@@ -83,8 +83,12 @@
   }
 
   /* 사진 영역 */
+  /* 사진 + 영어문장 나란히 */
+  .stage{
+    display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;justify-content:center;width:100%;
+  }
   .photo-zone{
-    width:100%;background:#fff;border-radius:24px;padding:20px;
+    flex:1 1 340px;max-width:560px;background:#fff;border-radius:24px;padding:20px;
     box-shadow:0 12px 32px rgba(50,80,130,.12);
     display:flex;flex-direction:column;align-items:center;gap:14px;
   }
@@ -125,11 +129,12 @@
 
   /* 대화 기록 */
   .transcript{
-    width:100%;max-width:600px;background:#fff;border-radius:20px;padding:20px;
+    flex:1 1 340px;max-width:520px;min-width:280px;background:#fff;border-radius:24px;padding:20px;
     box-shadow:0 6px 16px rgba(50,80,130,.08);
-    max-height:300px;overflow-y:auto;display:none;flex-direction:column;gap:14px;align-items:center;
+    max-height:72vh;overflow-y:auto;display:none;flex-direction:column;gap:14px;align-items:center;
   }
   .transcript.show{display:flex}
+  .transcript-title{font-size:15px;font-weight:800;color:#1d3a5c;margin-bottom:2px}
   /* 영어 문장만 — 크고 가운데 정렬 */
   .msg{width:100%;text-align:center;line-height:1.4;border-radius:14px}
   .msg.bot{
@@ -233,27 +238,31 @@
     <div class="bot-status" id="botStatus">버튼을 눌러 범블봇과 대화해요!</div>
     <div class="stars" id="stars" style="font-size:26px;letter-spacing:4px;min-height:32px;color:#ffc947"></div>
 
-    <div class="photo-zone">
-      <div class="photo-preview" id="photoPreview">
-        <div class="placeholder">
-          <span class="big">📷</span>
-          사진은 올려도 되고 안 올려도 돼요<br>
-          (그림·장난감·동물 사진을 올리면<br>범블봇이 보고 같이 얘기해요!)
+    <div class="stage">
+      <div class="photo-zone">
+        <div class="photo-preview" id="photoPreview">
+          <div class="placeholder">
+            <span class="big">📷</span>
+            사진은 올려도 되고 안 올려도 돼요<br>
+            (그림·장난감·동물 사진을 올리면<br>범블봇이 보고 같이 얘기해요!)
+          </div>
         </div>
+        <div class="photo-btns">
+          <button class="photo-btn" onclick="document.getElementById('fileInput').click()">🖼️ 사진 고르기</button>
+          <button class="photo-btn" onclick="document.getElementById('camInput').click()">📸 사진 찍기</button>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+        <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
       </div>
-      <div class="photo-btns">
-        <button class="photo-btn" onclick="document.getElementById('fileInput').click()">🖼️ 사진 고르기</button>
-        <button class="photo-btn" onclick="document.getElementById('camInput').click()">📸 사진 찍기</button>
+
+      <div class="transcript" id="transcript">
+        <div class="transcript-title">📣 따라 말해요!</div>
       </div>
-      <input type="file" id="fileInput" accept="image/*" style="display:none">
-      <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
     </div>
 
     <button class="talk-btn start" id="talkBtn" onclick="toggleTalk()" disabled>🎤 대화 시작하기</button>
 
     <p class="hint" id="hint">먼저 ⚙️에서 OpenAI 키를 넣고, 사진을 올린 다음 시작하세요.<br>마이크 권한을 허용해야 대화할 수 있어요.</p>
-
-    <div class="transcript" id="transcript"></div>
   </main>
 </div>
 
@@ -420,6 +429,8 @@ ${getKidInfo()}
 
 [대화 규칙]
 1. 위 아이 정보를 잘 활용해서, 원래 아이를 아는 친한 로봇 친구처럼 대화해. 아이가 좋아하는 것(로봇, 트랜스포머, 스파이더맨 등)을 대화에 자연스럽게 섞으면 더 좋아해.
+★사진 집중 규칙(가장 중요)★ 아이가 사진을 올렸으면, 반드시 그 사진 속에 실제로 보이는 것만 가지고 영어를 가르쳐. 사진에 로봇이 있으면 "It is a robot.", 자동차가 있으면 "I see a car.", 비행기가 있으면 "Look, an airplane!" 처럼. 사진을 매번 다시 보고 거기 실제로 있는 것으로 문장을 만들어. 사진과 상관없는 엉뚱한 내용은 절대 말하지 마.
+★천천히 말하기★ 아주 천천히, 또박또박, 단어를 하나씩 끊어서 말해. 6살 아이가 충분히 따라 할 수 있을 만큼 느리게. 절대 빠르게 말하지 마.
 2. 아이는 영어를 이제 막 시작했어. 알파벳은 알고 "I am Bumblebee" 같은 짧은 문장을 말할 수 있어.
 3. ★가장 중요한 규칙★ 단어 하나만 따라 시키지 마! 항상 '짧은 문장'을 통째로 따라 하게 해. 문장은 반드시 8단어 이내로, 쉽고 짧게. 평서문과 의문문을 골고루 섞어줘.
    - 좋은 예 (평서문): "It is a red robot.", "I like Spider-Man.", "This is so cool!", "He is very strong.", "I have two robots."
@@ -561,9 +572,9 @@ function configureSession(){
       instructions: buildInstructions(),
       audio: {
         input: {
-          turn_detection: { type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 1000 }
+          turn_detection: { type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 1200 }
         },
-        output: { voice: getVoice() }
+        output: { voice: getVoice(), speed: 0.85 }
       }
     }
   }));
@@ -577,8 +588,8 @@ function sendPhotoAndStart(){
       item: {
         type: 'message', role: 'user',
         content: [
-          { type: 'input_image', image_url: photoDataUrl, detail: 'low' },
-          { type: 'input_text', text: '이 사진을 보고 태림이랑 영어 대화를 시작해줘. 한국어로 신나게 "와 태림아! 뭐가 보여?" 하고 물어봐.' }
+          { type: 'input_image', image_url: photoDataUrl, detail: 'high' },
+          { type: 'input_text', text: '지금 이 사진을 아주 자세히 봐. 사진 속에 실제로 보이는 것들(예: 로봇, 자동차, 건물, 하늘, 비행기 등)을 파악해. 그리고 한국어로 신나게 "와 태림아! 이 사진 좀 봐! 여기 뭐가 보여?" 하고 물어본 뒤, 사진에 실제로 있는 것으로 짧은 영어 문장을 가르쳐줘. 사진에 없는 엉뚱한 것은 절대 말하지 마.' }
         ]
       }
     }));
