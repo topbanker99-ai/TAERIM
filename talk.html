@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>범블봇과 영어 대화 v12</title>
+<title>범블봇과 영어 대화 v13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -52,14 +52,16 @@
 
   /* 범블봇 캐릭터 (애니메이션 로봇) */
   .bot{
-    width:160px;height:160px;display:grid;place-items:center;
+    width:170px;display:grid;place-items:center;
     filter:drop-shadow(0 12px 24px rgba(255,158,27,.38));
   }
   .bot svg{width:100%;height:100%;animation:botFloat 3s ease-in-out infinite}
   @keyframes botFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
   /* 안테나 신호 깜빡임 (항상) */
   .antenna-ball{animation:antPulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .chest-glow{animation:antPulse 1.9s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
   @keyframes antPulse{0%,100%{opacity:.5;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+  .bot.listening .chest-glow{fill:#34d399}
   /* 입(이퀄라이저 바) — 쉴 땐 다물고, 말할 땐 움직임 */
   .mouth-bars rect{transform-box:fill-box;transform-origin:center bottom;transform:scaleY(.22)}
   .bot.speaking .mouth-bars rect{animation:mbar .42s ease-in-out infinite}
@@ -83,15 +85,21 @@
   }
 
   /* 사진 영역 */
-  /* 사진 + 영어문장 나란히 */
+  /* 사진 | 영어문장 | 범블봇 3단 */
   .stage{
-    display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;justify-content:center;width:100%;
+    display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;justify-content:center;width:100%;
   }
   .photo-zone{
-    flex:1 1 340px;max-width:560px;background:#fff;border-radius:24px;padding:20px;
+    flex:1 1 300px;max-width:460px;background:#fff;border-radius:24px;padding:18px;
     box-shadow:0 12px 32px rgba(50,80,130,.12);
     display:flex;flex-direction:column;align-items:center;gap:14px;
   }
+  /* 범블봇 컬럼 (오른쪽) */
+  .bot-col{
+    flex:0 0 180px;display:flex;flex-direction:column;align-items:center;
+    position:sticky;top:90px;
+  }
+  @media(max-width:900px){ .bot-col{flex:1 1 100%;order:-1} }
   .photo-preview{
     width:100%;max-width:600px;min-height:260px;border-radius:18px;
     background:#f0f4fa;border:3px dashed #c8d4e6;
@@ -129,20 +137,29 @@
 
   /* 대화 기록 */
   .transcript{
-    flex:1 1 340px;max-width:520px;min-width:280px;background:#fff;border-radius:24px;padding:20px;
+    flex:1 1 320px;max-width:480px;min-width:260px;background:#fff;border-radius:24px;padding:18px;
     box-shadow:0 6px 16px rgba(50,80,130,.08);
-    max-height:72vh;overflow-y:auto;display:none;flex-direction:column;gap:14px;align-items:center;
+    max-height:74vh;overflow-y:auto;display:none;flex-direction:column;gap:10px;align-items:center;
   }
   .transcript.show{display:flex}
-  .transcript-title{font-size:15px;font-weight:800;color:#1d3a5c;margin-bottom:2px}
-  /* 영어 문장만 — 크고 가운데 정렬 */
-  .msg{width:100%;text-align:center;line-height:1.4;border-radius:14px}
-  .msg.bot{
-    background:#fff4d6;color:#7a4a00;
-    font-family:"Fredoka","Noto Sans KR",sans-serif;
-    font-size:26px;font-weight:700;padding:16px 20px;
+  .transcript-title{font-size:14px;font-weight:800;color:#1d3a5c;margin-bottom:2px}
+  /* 지금 따라 할 문장 — 맨 위 큰 글씨 고정 */
+  .current-line{
+    width:100%;text-align:center;font-family:"Fredoka","Noto Sans KR",sans-serif;
+    font-size:28px;font-weight:800;color:#7a4a00;background:#fff4d6;
+    border-radius:18px;padding:20px 16px;line-height:1.35;
+    transition:transform .18s;border:2px solid #ffe3a0;
   }
-  .msg.kid{display:none}  /* 아이 음성은 표시 안 함 (영어 문장만 강조) */
+  .repeat-dots{font-size:18px;font-weight:800;color:#ff9e1b;letter-spacing:3px}
+  .history-label{font-size:12px;font-weight:700;color:#a8b5c8;margin-top:4px}
+  /* 영어 문장만 — 크고 가운데 정렬 */
+  .msg{width:100%;text-align:center;line-height:1.35;border-radius:12px}
+  .msg.bot{
+    background:#f7f9fc;color:#8a7a55;
+    font-family:"Fredoka","Noto Sans KR",sans-serif;
+    font-size:16px;font-weight:600;padding:10px 14px;
+  }
+  .msg.kid{display:none}
 
   .hint{font-size:13px;color:#7a8a9e;font-weight:600;text-align:center;line-height:1.6;max-width:480px}
 
@@ -194,47 +211,6 @@
   </header>
 
   <main class="main">
-    <div class="bot" id="bot">
-      <svg viewBox="0 0 140 150" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="yel" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#fff088"/>
-            <stop offset="1" stop-color="#ffbf00"/>
-          </linearGradient>
-          <linearGradient id="grey" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#e0e0e0"/>
-            <stop offset="1" stop-color="#a0a0a0"/>
-          </linearGradient>
-        </defs>
-        <path d="M70,20 C45,20 20,40 20,70 L20,95 C20,110 35,120 70,120 C105,120 120,110 120,95 L120,70 C120,40 95,20 70,20 Z" fill="url(#yel)" stroke="#d98e00" stroke-width="2"/>
-        <g class="antenna-horn">
-          <path d="M30,30 L10,10 L20,5 L35,25 Z" fill="url(#yel)" stroke="#d98e00" stroke-width="2"/>
-          <path d="M110,30 L130,10 L120,5 L105,25 Z" fill="url(#yel)" stroke="#d98e00" stroke-width="2"/>
-          <circle class="antenna-ball" cx="15" cy="8" r="4" fill="#38bdf8"/>
-          <circle class="antenna-ball" cx="125" cy="8" r="4" fill="#38bdf8"/>
-        </g>
-        <path d="M26,75 L45,75 C45,75 50,110 70,110 C90,110 95,75 95,75 L114,75 L100,105 L40,105 L26,75 Z" fill="url(#grey)" stroke="#808080" stroke-width="1.5"/>
-        <path d="M70,110 L70,105" stroke="#808080" stroke-width="2" stroke-linecap="round"/>
-        <path d="M45,75 L40,105" stroke="#808080" stroke-width="1"/>
-        <path d="M95,75 L100,105" stroke="#808080" stroke-width="1"/>
-        <g class="eyes">
-          <circle class="eye-ring" cx="50" cy="64" r="14" fill="#050a12" stroke="#404040" stroke-width="1"/>
-          <circle class="eye-glow" cx="50" cy="64" r="10" fill="#38bdf8"/>
-          <circle cx="47" cy="61" r="3" fill="#eaffff" opacity=".9"/>
-          <circle class="eye-ring" cx="90" cy="64" r="14" fill="#050a12" stroke="#404040" stroke-width="1"/>
-          <circle class="eye-glow" cx="90" cy="64" r="10" fill="#38bdf8"/>
-          <circle cx="87" cy="61" r="3" fill="#eaffff" opacity=".9"/>
-        </g>
-        <g class="mouth-bars">
-          <rect x="52" y="90" width="7" height="15" rx="2" fill="#ffd23f"/>
-          <rect x="61" y="90" width="7" height="15" rx="2" fill="#7dd3fc"/>
-          <rect x="70" y="90" width="7" height="15" rx="2" fill="#fff"/>
-          <rect x="79" y="90" width="7" height="15" rx="2" fill="#7dd3fc"/>
-          <rect x="88" y="90" width="7" height="15" rx="2" fill="#ffd23f"/>
-        </g>
-        <path d="M50,115 L70,112 L90,115 L85,125 L55,125 Z" fill="#606060" stroke="#404040" stroke-width="1.5"/>
-      </svg>
-    </div>
     <div class="bot-status" id="botStatus">버튼을 눌러 범블봇과 대화해요!</div>
     <div class="stars" id="stars" style="font-size:26px;letter-spacing:4px;min-height:32px;color:#ffc947"></div>
 
@@ -257,6 +233,49 @@
 
       <div class="transcript" id="transcript">
         <div class="transcript-title">📣 따라 말해요!</div>
+        <div class="current-line" id="currentLine">사진을 보며 시작해요!</div>
+        <div class="repeat-dots" id="repeatDots">○○○○○ (0/5)</div>
+        <div class="history-label" id="historyLabel"></div>
+      </div>
+
+      <div class="bot-col">
+<div class="bot" id="bot">
+      <svg viewBox="0 0 140 250" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="yel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset="1" stop-color="#ffb300"/></linearGradient>
+          <linearGradient id="grey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e0e0"/><stop offset="1" stop-color="#9a9a9a"/></linearGradient>
+        </defs>
+        <g transform="translate(0,-2)">
+          <line x1="70" y1="22" x2="70" y2="9" stroke="#d98e00" stroke-width="4" stroke-linecap="round"/>
+          <circle class="antenna-ball" cx="70" cy="7" r="5.5" fill="#38bdf8"/>
+          <rect x="18" y="60" width="12" height="26" rx="4" fill="#e09a00"/>
+          <rect x="110" y="60" width="12" height="26" rx="4" fill="#e09a00"/>
+          <rect x="28" y="24" width="84" height="92" rx="22" fill="url(#yel)" stroke="#d98e00" stroke-width="3"/>
+          <rect x="38" y="42" width="64" height="58" rx="15" fill="#142136"/>
+          <circle class="eye-ring" cx="55" cy="62" r="11" fill="#0a1626"/><circle class="eye-glow" cx="55" cy="62" r="7.5" fill="#38bdf8"/><circle cx="52" cy="59" r="2.6" fill="#eaffff" opacity=".9"/>
+          <circle class="eye-ring" cx="85" cy="62" r="11" fill="#0a1626"/><circle class="eye-glow" cx="85" cy="62" r="7.5" fill="#38bdf8"/><circle cx="82" cy="59" r="2.6" fill="#eaffff" opacity=".9"/>
+          <g class="mouth-bars">
+            <rect x="52" y="80" width="6" height="13" rx="2" fill="#ffd23f"/>
+            <rect x="60" y="80" width="6" height="13" rx="2" fill="#7dd3fc"/>
+            <rect x="68" y="80" width="6" height="13" rx="2" fill="#fff"/>
+            <rect x="76" y="80" width="6" height="13" rx="2" fill="#7dd3fc"/>
+            <rect x="84" y="80" width="6" height="13" rx="2" fill="#ffd23f"/>
+          </g>
+        </g>
+        <rect x="60" y="116" width="20" height="12" rx="3" fill="#8a929c"/>
+        <rect x="36" y="128" width="68" height="64" rx="18" fill="url(#yel)" stroke="#d98e00" stroke-width="3"/>
+        <circle class="chest-glow" cx="70" cy="158" r="9" fill="#38bdf8"/>
+        <rect x="55" y="176" width="30" height="7" rx="3" fill="#d98e00" opacity=".5"/>
+        <rect x="18" y="132" width="16" height="46" rx="8" fill="url(#yel)" stroke="#d98e00" stroke-width="2.5"/>
+        <circle cx="26" cy="184" r="9" fill="#3a3f48"/>
+        <rect x="106" y="132" width="16" height="46" rx="8" fill="url(#yel)" stroke="#d98e00" stroke-width="2.5"/>
+        <circle cx="114" cy="184" r="9" fill="#3a3f48"/>
+        <rect x="48" y="192" width="18" height="44" rx="8" fill="url(#grey)" stroke="#808080" stroke-width="2"/>
+        <rect x="74" y="192" width="18" height="44" rx="8" fill="url(#grey)" stroke="#808080" stroke-width="2"/>
+        <rect x="44" y="232" width="26" height="12" rx="5" fill="#ffb300" stroke="#d98e00" stroke-width="2"/>
+        <rect x="70" y="232" width="26" height="12" rx="5" fill="#ffb300" stroke="#d98e00" stroke-width="2"/>
+      </svg>
+    </div>
       </div>
     </div>
 
@@ -612,6 +631,7 @@ async function startTalk(){
     isActive = true;
     resetStars();
     lastEngKey = ''; lastEngCount = 0;
+    setCurrent('준비됐어요! 🎤'); updateRepeatDots(0);
     document.getElementById('talkBtn').disabled = false;
     document.getElementById('talkBtn').className = 'talk-btn stop';
     document.getElementById('talkBtn').textContent = '⏹ 대화 끝내기';
@@ -685,10 +705,11 @@ function handleEvent(ev){
     case 'response.output_audio_transcript.done':
     case 'response.audio_transcript.done':
       if(curBotText.trim()){
-        const eng = extractEnglish(curBotText);
-        if(eng){
-          addMsg('bot', eng);
-          trackRepeat(eng);
+        const core = coreSentence(curBotText);
+        if(core){
+          setCurrent(core);     // 맨 위 큰 글씨로 현재 문장
+          addMsg('bot', core);  // 아래 기록
+          trackRepeat(core);    // 반복 카운트 (핵심 문장 기준)
         }
       }
       curBotText = '';
@@ -784,26 +805,61 @@ function setStatus(text, botClass){
   const bot = document.getElementById('bot');
   bot.className = 'bot' + (botClass ? ' ' + botClass : '');
 }
+function setCurrent(core){
+  const el = document.getElementById('currentLine');
+  if(el){
+    el.textContent = core;
+    el.style.transform = 'scale(1.06)';
+    setTimeout(()=> el.style.transform = 'scale(1)', 180);
+  }
+  const hl = document.getElementById('historyLabel');
+  if(hl) hl.textContent = '지난 문장들';
+}
 function addMsg(who, text){
   const t = document.getElementById('transcript');
   const div = document.createElement('div');
   div.className = 'msg ' + who;
   div.textContent = text;
   t.appendChild(div);
-  // 영어 문장 카드는 최근 5개만 유지
+  // 기록 카드는 최근 4개만
   const bots = t.querySelectorAll('.msg.bot');
-  if(bots.length > 5) bots[0].remove();
+  if(bots.length > 4) bots[0].remove();
   t.scrollTop = t.scrollHeight;
 }
 
-// 봇 발화에서 영어 문장만 추출
+// 봇 발화에서 영어만 추출
 function extractEnglish(text){
   const matches = text.match(/[A-Za-z][A-Za-z0-9 .,!?'"\-]*/g);
   if(!matches) return '';
   let eng = matches.map(s => s.trim()).filter(s => s.length > 1).join(' ');
   eng = eng.replace(/\s+/g, ' ').trim();
-  // 영어 단어가 2개 미만이면(너무 짧으면) 그래도 표시 (단어 하나라도 보여주기)
   return eng;
+}
+
+// 칭찬/지시를 빼고 '진짜 가르치는 핵심 문장' 하나만 뽑기
+function coreSentence(text){
+  const eng = extractEnglish(text);
+  if(!eng) return '';
+  const clauses = eng.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 1);
+  if(!clauses.length) return '';
+  // 칭찬/지시/메타 표현 (이런 문장은 핵심이 아님)
+  const praise = /(good job|good try|great|well done|wow|nice|perfect|excellent|amazing|awesome|cool|yay|bravo|almost|ready|listen|one more|try again|your turn|my turn|mom|now say|say it|repeat|together|okay|ok\b|yes\b|let'?s|lets|here we go|again)/i;
+  // 진짜 가르치는 문장 패턴
+  const teach = /\b(is|are|see|look|have|has|like|can|make|makes|walk|run|fly|it|this|that|he|she|they|i)\b/i;
+  let cands = clauses.filter(c => !praise.test(c));
+  if(!cands.length) cands = clauses.slice();
+  let best = '', bestScore = -1;
+  for(const c of cands){
+    const words = c.split(/\s+/).length;
+    const score = (teach.test(c) ? 100 : 0) + words;
+    if(score > bestScore){ bestScore = score; best = c; }
+  }
+  best = best.replace(/^["']+|["']+$/g, '').trim();
+  // 앞에 칭찬이 남았으면, 가르치는 문장 시작점(It/This/I/Look/The...)부터 잘라내기
+  const startM = best.match(/\b(It'?s?|This|That|These|Those|I|I'?m|He|She|They|We|You|Look|The|A|An|My|Here)\b.*$/);
+  if(startM) best = startM[0].trim();
+  if(best && !/[.!?]$/.test(best)) best += '.';
+  return best;
 }
 
 // 같은 영어 문장 반복 횟수 추적 → 5번이면 범블봇에 "넘어가" 신호
@@ -812,29 +868,35 @@ let lastEngCount = 0;
 function normalizeEng(s){
   return s.toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
 }
-function trackRepeat(eng){
-  const key = normalizeEng(eng);
+function trackRepeat(core){
+  const key = normalizeEng(core);
   if(!key || key.length < 3) return;
-  // 핵심 문장이 직전과 비슷한지 (포함 관계로 판단)
-  if(lastEngKey && (key.includes(lastEngKey) || lastEngKey.includes(key))){
+  // 핵심 문장이 같은지 (정확/포함 둘 다 체크)
+  if(lastEngKey && (key === lastEngKey || key.includes(lastEngKey) || lastEngKey.includes(key))){
     lastEngCount++;
   } else {
     lastEngKey = key;
     lastEngCount = 1;
   }
   console.log('[범블봇] 같은 문장 반복:', lastEngCount, '회 -', key);
-  if(lastEngCount >= 6 && dc && dc.readyState === 'open'){
-    // 5번째 → 다음으로 넘어가라고 시스템 메시지 주입
-    console.log('[범블봇] 5번 도달 → 다음 단계 유도');
+  updateRepeatDots(lastEngCount);
+  if(lastEngCount >= 5 && dc && dc.readyState === 'open'){
+    console.log('[범블봇] 5번 도달 → 다음 문장으로 전환 신호');
     dc.send(JSON.stringify({
       type: 'conversation.item.create',
       item: { type: 'message', role: 'user', content: [{ type: 'input_text',
-        text: '(시스템 안내) 방금 그 영어 문장을 충분히(5번 넘게) 연습했어. 이제 그 문장은 그만하고 사진 속 \'다른 것\'을 새로 영어로 가르쳐줘 (전체→색깔→부분→느낌 순서대로 다음 항목). 가끔은 태림이에게 오늘 있었던 일을 한국어로 물어봐도 좋아. 절대 방금 그 문장을 또 반복하지 마.' }] }
+        text: '(시스템 안내) 방금 그 영어 문장 「' + core + '」를 벌써 5번 연습했어! 이제 그 문장은 완전히 그만하고, 반드시 사진 속 \'다른 것\'을 새로 가르쳐줘 (전체 장면→색깔→부분(위/가운데/아래/손)→느낌 순서로 다음 항목). 같은 문장 절대 또 반복 금지! 새 문장도 엄마랑 번갈아 5번 연습시켜.' }] }
     }));
     dc.send(JSON.stringify({ type: 'response.create' }));
-    lastEngKey = '';  // 리셋
+    lastEngKey = '';
     lastEngCount = 0;
   }
+}
+function updateRepeatDots(n){
+  const el = document.getElementById('repeatDots');
+  if(!el) return;
+  const filled = Math.min(n, 5);
+  el.textContent = '●'.repeat(filled) + '○'.repeat(Math.max(0, 5 - filled)) + ' (' + filled + '/5)';
 }
 let starCount = 0;
 function addStar(){
