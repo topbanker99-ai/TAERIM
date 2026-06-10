@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>범블봇과 영어 대화 v7</title>
+<title>범블봇과 영어 대화 v8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -339,6 +339,7 @@ let localStream = null;   // 마이크
 let audioCtx = null;
 let isActive = false;
 let photoDataUrl = null;
+let photoDescription = '';  // 사진을 글로 분석한 결과
 let botSpeaking = false;
 
 // --- 설정 저장 ---
@@ -400,6 +401,7 @@ function handlePhoto(file){
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       photoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      photoDescription = '';  // 새 사진이니 분석 결과 초기화
       const prev = document.getElementById('photoPreview');
       prev.classList.add('has-photo');
       prev.innerHTML = `<img src="${photoDataUrl}" alt="사진">`;
@@ -420,12 +422,50 @@ function updateReady(){
   else document.getElementById('hint').innerHTML = '사진 준비 완료! "대화 시작하기"를 눌러요. 🎤';
 }
 
+// --- 사진 분석 (실시간 모델은 이미지를 못 보므로 글로 변환) ---
+async function describePhoto(){
+  if(!photoDataUrl) return '';
+  try {
+    console.log('[범블봇] 사진 분석 중 (gpt-4o-mini)...');
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 350,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: '이 사진에 무엇이 보이는지 한국어로 구체적으로 설명해줘. 6살 아이에게 영어를 가르치려는 목적이야. 사진 속에 실제로 보이는 사물·동물·사람·탈것·배경을 구체적으로 나열해줘 (예: 빨간 로봇 2개, 노란 로봇 1개, 하늘에 날아가는 비행기 5대, 높은 빌딩들, 갈라진 도로). 각 사물의 쉬운 영어 단어도 괄호로 같이 알려줘 (예: 로봇(robot), 비행기(airplane)). 4~6문장으로 친절하게.' },
+            { type: 'image_url', image_url: { url: photoDataUrl } }
+          ]
+        }]
+      })
+    });
+    if(!resp.ok){
+      const t = await resp.text();
+      console.error('[범블봇] 사진 분석 실패:', resp.status, t);
+      return '';
+    }
+    const data = await resp.json();
+    const desc = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+    console.log('[범블봇] 사진 분석 결과:', desc);
+    return desc.trim();
+  } catch(e){
+    console.error('[범블봇] 사진 분석 오류:', e);
+    return '';
+  }
+}
+
 // --- 시스템 프롬프트 (태림이 맞춤) ---
 function buildInstructions(){
+  const photoNote = photoDescription
+    ? `\n\n[지금 아이가 보고 있는 사진 속 내용]\n${photoDescription}\n→ 반드시 이 사진 속에 실제로 있는 것들로만 영어를 가르쳐. 사진에 없는 엉뚱한 것은 절대 말하지 마. 사진 속 사물 이름을 영어로 하나씩 가르치고, 그걸로 짧은 문장을 만들어줘.`
+    : '';
   return `너는 '범블봇'이라는 친절하고 씩씩한 변신로봇 캐릭터야. 한국 아이에게 영어를 가르치는 다정한 선생님이자 친구야.
 
 [지금 함께하는 아이에 대해]
-${getKidInfo()}
+${getKidInfo()}${photoNote}
 
 [대화 규칙]
 1. 위 아이 정보를 잘 활용해서, 원래 아이를 아는 친한 로봇 친구처럼 대화해. 아이가 좋아하는 것(로봇, 트랜스포머, 스파이더맨 등)을 대화에 자연스럽게 섞으면 더 좋아해.
@@ -471,6 +511,12 @@ async function startTalk(){
     // 2) 오디오 컨텍스트 (로봇 효과용)
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if(audioCtx.state === 'suspended') await audioCtx.resume();
+
+    // 2.5) 사진이 있으면 먼저 글로 분석 (실시간 모델은 이미지를 못 보므로)
+    if(photoDataUrl && !photoDescription){
+      setStatus('범블봇이 사진을 살펴보는 중... 👀', '');
+      photoDescription = await describePhoto();
+    }
 
     // 3) 임시 토큰 발급 (client_secrets)
     console.log('[범블봇] 토큰 발급 중...');
@@ -581,30 +627,21 @@ function configureSession(){
 }
 
 function sendPhotoAndStart(){
-  if(photoDataUrl){
-    // 사진이 있으면: 사진 보고 대화 시작
-    dc.send(JSON.stringify({
-      type: 'conversation.item.create',
-      item: {
-        type: 'message', role: 'user',
-        content: [
-          { type: 'input_image', image_url: photoDataUrl, detail: 'high' },
-          { type: 'input_text', text: '지금 이 사진을 아주 자세히 봐. 사진 속에 실제로 보이는 것들(예: 로봇, 자동차, 건물, 하늘, 비행기 등)을 파악해. 그리고 한국어로 신나게 "와 태림아! 이 사진 좀 봐! 여기 뭐가 보여?" 하고 물어본 뒤, 사진에 실제로 있는 것으로 짧은 영어 문장을 가르쳐줘. 사진에 없는 엉뚱한 것은 절대 말하지 마.' }
-        ]
-      }
-    }));
+  let startText;
+  if(photoDescription){
+    // 사진을 글로 분석한 내용이 있으면 그걸로 시작
+    startText = '아이가 지금 사진 한 장을 보고 있어. 사진 속 내용은 이래: 「' + photoDescription + '」. 이제 한국어로 아주 신나게 "와~ 태림아! 이 사진 좀 봐! 여기 뭐가 보여?" 하고 물어봐. 그다음 사진 속에 실제로 있는 것(로봇, 비행기, 빌딩 등) 하나를 골라 영어 단어와 짧은 문장을 아주 천천히 가르쳐줘. 사진에 없는 건 절대 말하지 마.';
+  } else if(photoDataUrl){
+    // 분석 실패 시: 아이에게 직접 물어보며 진행
+    startText = '아이가 사진을 보고 있어. 한국어로 아주 신나게 "와 태림아! 이 사진에 뭐가 보여?" 하고 물어본 뒤, 아이가 한국어로 답하면 그것을 영어로 짧은 문장으로 천천히 가르쳐줘.';
   } else {
-    // 사진이 없으면: 그냥 신나게 인사하고 시작
-    dc.send(JSON.stringify({
-      type: 'conversation.item.create',
-      item: {
-        type: 'message', role: 'user',
-        content: [
-          { type: 'input_text', text: '태림이한테 신나게 인사하고 영어 놀이를 시작해줘. "삐빕! 안녕 태림아! 나는 범블봇이야!"처럼 밝게 인사한 다음, 태림이가 좋아하는 로봇이나 스파이더맨 얘기로 짧은 영어 한 문장을 가르쳐줘.' }
-        ]
-      }
-    }));
+    // 사진 없음: 인사하고 시작
+    startText = '태림이한테 신나게 인사하고 영어 놀이를 시작해줘. "삐빕! 안녕 태림아! 나는 범블봇이야!"처럼 밝게 인사한 다음, 태림이가 좋아하는 로봇이나 스파이더맨 얘기로 짧은 영어 문장을 천천히 가르쳐줘.';
   }
+  dc.send(JSON.stringify({
+    type: 'conversation.item.create',
+    item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: startText }] }
+  }));
   dc.send(JSON.stringify({ type: 'response.create' }));
 }
 
