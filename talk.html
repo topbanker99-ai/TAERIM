@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>범블봇과 영어 대화 v5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Noto Sans KR","Pretendard",sans-serif;
+    background:
+      radial-gradient(circle at 25% 20%, rgba(255,201,71,.25), transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(29,99,255,.22), transparent 50%),
+      linear-gradient(135deg,#fff8e8 0%,#eaf1ff 100%);
+    min-height:100vh;
+    color:#1a2842;
+    overflow-x:hidden;
+  }
+  .app{min-height:100vh;display:flex;flex-direction:column}
+
+  .topbar{
+    background:linear-gradient(135deg,#1d3a5c,#2e6fb0);
+    color:#fff;padding:14px 22px;
+    display:flex;align-items:center;justify-content:space-between;
+    box-shadow:0 6px 20px rgba(0,0,0,.18);flex-wrap:wrap;gap:10px;
+    position:relative;z-index:10;
+  }
+  .back-btn{
+    background:rgba(255,255,255,.22);color:#fff;
+    border:1px solid rgba(255,255,255,.4);padding:8px 16px;
+    border-radius:999px;font-weight:800;font-size:13px;cursor:pointer;
+    text-decoration:none;backdrop-filter:blur(6px);
+  }
+  .back-btn:hover{background:rgba(255,255,255,.35)}
+  .topbar h1{
+    font-family:"Fredoka","Noto Sans KR",sans-serif;
+    font-size:18px;font-weight:900;flex:1;text-align:center;min-width:180px;
+  }
+  .gear{
+    background:rgba(255,255,255,.22);color:#fff;border:1px solid rgba(255,255,255,.4);
+    width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;
+  }
+
+  .main{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    padding:24px 18px;max-width:760px;margin:0 auto;width:100%;gap:18px;
+  }
+
+  /* 범블봇 캐릭터 (애니메이션 로봇) */
+  .bot{
+    width:160px;height:160px;display:grid;place-items:center;
+    filter:drop-shadow(0 12px 24px rgba(255,158,27,.38));
+  }
+  .bot svg{width:100%;height:100%;animation:botFloat 3s ease-in-out infinite}
+  @keyframes botFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  /* 안테나 신호 깜빡임 (항상) */
+  .antenna-ball{animation:antPulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes antPulse{0%,100%{opacity:.5;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+  /* 입(이퀄라이저 바) — 쉴 땐 다물고, 말할 땐 움직임 */
+  .mouth-bars rect{transform-box:fill-box;transform-origin:center bottom;transform:scaleY(.22)}
+  .bot.speaking .mouth-bars rect{animation:mbar .42s ease-in-out infinite}
+  .bot.speaking .mouth-bars rect:nth-child(2){animation-delay:.09s}
+  .bot.speaking .mouth-bars rect:nth-child(3){animation-delay:.18s}
+  .bot.speaking .mouth-bars rect:nth-child(4){animation-delay:.27s}
+  .bot.speaking .mouth-bars rect:nth-child(5){animation-delay:.36s}
+  @keyframes mbar{0%,100%{transform:scaleY(.22)}50%{transform:scaleY(1)}}
+  /* 눈 — 들을 땐 초록으로 빛나며 깜빡 */
+  .eye-glow{transition:fill .3s}
+  .bot.listening .eye-glow{fill:#34d399}
+  .bot.listening .antenna-ball{fill:#34d399}
+  .bot.listening .eye-ring{animation:eyeBlink 1.3s ease-in-out infinite}
+  @keyframes eyeBlink{0%,100%{opacity:1}50%{opacity:.45}}
+  /* 말할 때 살짝 들썩 */
+  .bot.speaking svg{animation:botBob .42s ease-in-out infinite}
+  @keyframes botBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+  .bot-status{
+    font-weight:900;font-size:16px;color:#1d3a5c;text-align:center;min-height:24px;
+  }
+
+  /* 사진 영역 */
+  .photo-zone{
+    width:100%;background:#fff;border-radius:24px;padding:20px;
+    box-shadow:0 12px 32px rgba(50,80,130,.12);
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+  }
+  .photo-preview{
+    width:100%;max-width:480px;aspect-ratio:4/3;border-radius:18px;
+    background:#f0f4fa;border:3px dashed #c8d4e6;
+    display:grid;place-items:center;overflow:hidden;position:relative;
+  }
+  .photo-preview img{width:100%;height:100%;object-fit:contain}
+  .photo-preview .placeholder{
+    text-align:center;color:#8a9bb5;font-weight:700;font-size:15px;line-height:1.6;padding:20px;
+  }
+  .photo-preview .placeholder .big{font-size:48px;display:block;margin-bottom:10px}
+
+  .photo-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .photo-btn{
+    background:#eef4ff;color:#174a98;border:2px solid #d8e5fb;
+    padding:12px 20px;border-radius:14px;font-weight:800;font-size:14px;
+    cursor:pointer;font-family:inherit;
+  }
+  .photo-btn:hover{background:#dde8ff}
+
+  /* 시작/종료 버튼 */
+  .talk-btn{
+    width:100%;max-width:480px;padding:20px;border:0;border-radius:20px;
+    font-family:"Fredoka","Noto Sans KR",sans-serif;font-weight:900;font-size:20px;
+    cursor:pointer;transition:all .2s;box-shadow:0 10px 28px rgba(0,0,0,.18);
+  }
+  .talk-btn.start{background:linear-gradient(135deg,#ffd23f,#ff9e1b);color:#5a3500}
+  .talk-btn.start:hover:not(:disabled){transform:translateY(-3px)}
+  .talk-btn.stop{background:linear-gradient(135deg,#e74b4b,#c0392b);color:#fff}
+  .talk-btn:disabled{opacity:.45;cursor:not-allowed}
+
+  /* 대화 기록 */
+  .transcript{
+    width:100%;background:#fff;border-radius:20px;padding:16px;
+    box-shadow:0 6px 16px rgba(50,80,130,.08);
+    max-height:220px;overflow-y:auto;display:none;flex-direction:column;gap:8px;
+  }
+  .transcript.show{display:flex}
+  .msg{padding:10px 14px;border-radius:14px;font-size:14px;font-weight:600;line-height:1.5;max-width:85%}
+  .msg.bot{background:#fff4d6;color:#8a5800;align-self:flex-start;border-bottom-left-radius:4px}
+  .msg.kid{background:#e6f0ff;color:#174a98;align-self:flex-end;border-bottom-right-radius:4px}
+
+  .hint{font-size:13px;color:#7a8a9e;font-weight:600;text-align:center;line-height:1.6;max-width:480px}
+
+  /* 모달 */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;
+    display:none;place-items:center;backdrop-filter:blur(4px);padding:20px;
+  }
+  .modal-bg.show{display:grid}
+  .modal{
+    background:#fff;border-radius:24px;padding:28px;max-width:520px;width:100%;
+    box-shadow:0 30px 80px rgba(0,0,0,.4);max-height:90vh;overflow-y:auto;
+  }
+  .modal h2{font-size:20px;margin-bottom:14px;color:#1a2842}
+  .modal p{color:#5a6b88;font-size:14px;line-height:1.6;margin-bottom:16px}
+  .modal input{
+    width:100%;padding:14px;border:2px solid #d8e5fb;border-radius:14px;
+    font-size:14px;font-family:monospace;box-sizing:border-box;margin-bottom:14px;
+  }
+  .modal label{font-size:14px;font-weight:800;color:#1a2842;display:block;margin:12px 0 6px}
+  .modal select{
+    width:100%;padding:12px;border:2px solid #d8e5fb;border-radius:12px;
+    font-size:14px;font-family:inherit;box-sizing:border-box;
+  }
+  .modal-btns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .btn-primary{flex:1;min-width:120px;padding:14px;background:linear-gradient(135deg,#1d63ff,#2e6fb0);color:#fff;border:0;border-radius:14px;font-weight:900;font-size:14px;cursor:pointer;font-family:inherit}
+  .btn-ghost{padding:14px 18px;background:#f0f4fa;color:#1a2842;border:0;border-radius:14px;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
+  details{margin-top:14px;padding:14px;background:#f7f9fc;border-radius:12px}
+  summary{cursor:pointer;font-weight:800;color:#1d63ff;font-size:14px}
+  details ol{color:#5a6b88;font-size:13px;line-height:1.85;padding-left:20px;margin:10px 0 0}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#1a2842;color:#fff;padding:12px 22px;border-radius:999px;
+    font-weight:800;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);
+    opacity:0;transition:all .2s;z-index:10000;max-width:90vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+  .toast.fail{background:#b92929}
+  .toast.success{background:#08794e}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a href="index.html" class="back-btn">← 메뉴로</a>
+    <h1>🤖 범블봇과 영어 대화</h1>
+    <button class="gear" onclick="openSettings()">⚙️</button>
+  </header>
+
+  <main class="main">
+    <div class="bot" id="bot">
+      <svg viewBox="0 0 140 150" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="yel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fff088"/>
+            <stop offset="1" stop-color="#ffbf00"/>
+          </linearGradient>
+          <linearGradient id="grey" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#e0e0e0"/>
+            <stop offset="1" stop-color="#a0a0a0"/>
+          </linearGradient>
+        </defs>
+        <path d="M70,20 C45,20 20,40 20,70 L20,95 C20,110 35,120 70,120 C105,120 120,110 120,95 L120,70 C120,40 95,20 70,20 Z" fill="url(#yel)" stroke="#d98e00" stroke-width="2"/>
+        <g class="antenna-horn">
+          <path d="M30,30 L10,10 L20,5 L35,25 Z" fill="url(#yel)" stroke="#d98e00" stroke-width="2"/>
+          <path d="M110,30 L130,10 L120,5 L105,25 Z" fill="url(#yel)" stroke="#d98e00" stroke-width="2"/>
+          <circle class="antenna-ball" cx="15" cy="8" r="4" fill="#38bdf8"/>
+          <circle class="antenna-ball" cx="125" cy="8" r="4" fill="#38bdf8"/>
+        </g>
+        <path d="M26,75 L45,75 C45,75 50,110 70,110 C90,110 95,75 95,75 L114,75 L100,105 L40,105 L26,75 Z" fill="url(#grey)" stroke="#808080" stroke-width="1.5"/>
+        <path d="M70,110 L70,105" stroke="#808080" stroke-width="2" stroke-linecap="round"/>
+        <path d="M45,75 L40,105" stroke="#808080" stroke-width="1"/>
+        <path d="M95,75 L100,105" stroke="#808080" stroke-width="1"/>
+        <g class="eyes">
+          <circle class="eye-ring" cx="50" cy="64" r="14" fill="#050a12" stroke="#404040" stroke-width="1"/>
+          <circle class="eye-glow" cx="50" cy="64" r="10" fill="#38bdf8"/>
+          <circle cx="47" cy="61" r="3" fill="#eaffff" opacity=".9"/>
+          <circle class="eye-ring" cx="90" cy="64" r="14" fill="#050a12" stroke="#404040" stroke-width="1"/>
+          <circle class="eye-glow" cx="90" cy="64" r="10" fill="#38bdf8"/>
+          <circle cx="87" cy="61" r="3" fill="#eaffff" opacity=".9"/>
+        </g>
+        <g class="mouth-bars">
+          <rect x="52" y="90" width="7" height="15" rx="2" fill="#ffd23f"/>
+          <rect x="61" y="90" width="7" height="15" rx="2" fill="#7dd3fc"/>
+          <rect x="70" y="90" width="7" height="15" rx="2" fill="#fff"/>
+          <rect x="79" y="90" width="7" height="15" rx="2" fill="#7dd3fc"/>
+          <rect x="88" y="90" width="7" height="15" rx="2" fill="#ffd23f"/>
+        </g>
+        <path d="M50,115 L70,112 L90,115 L85,125 L55,125 Z" fill="#606060" stroke="#404040" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="bot-status" id="botStatus">버튼을 눌러 범블봇과 대화해요!</div>
+    <div class="stars" id="stars" style="font-size:26px;letter-spacing:4px;min-height:32px;color:#ffc947"></div>
+
+    <div class="photo-zone">
+      <div class="photo-preview" id="photoPreview">
+        <div class="placeholder">
+          <span class="big">📷</span>
+          사진은 올려도 되고 안 올려도 돼요<br>
+          (그림·장난감·동물 사진을 올리면<br>범블봇이 보고 같이 얘기해요!)
+        </div>
+      </div>
+      <div class="photo-btns">
+        <button class="photo-btn" onclick="document.getElementById('fileInput').click()">🖼️ 사진 고르기</button>
+        <button class="photo-btn" onclick="document.getElementById('camInput').click()">📸 사진 찍기</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
+    </div>
+
+    <button class="talk-btn start" id="talkBtn" onclick="toggleTalk()" disabled>🎤 대화 시작하기</button>
+
+    <p class="hint" id="hint">먼저 ⚙️에서 OpenAI 키를 넣고, 사진을 올린 다음 시작하세요.<br>마이크 권한을 허용해야 대화할 수 있어요.</p>
+
+    <div class="transcript" id="transcript"></div>
+  </main>
+</div>
+
+<audio id="botAudio" autoplay></audio>
+
+<!-- 설정 모달 -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h2>🤖 범블봇 설정</h2>
+    <p id="keyStatus"></p>
+    <label>OpenAI API 키 (탑뱅커AI에서 쓰던 키 그대로 OK)</label>
+    <input id="keyInput" type="password" placeholder="sk-... 붙여넣기">
+
+    <label>🎙️ 목소리</label>
+    <select id="voiceSelect">
+      <option value="ash">Ash — 깊은 남성 (로봇 추천)</option>
+      <option value="echo">Echo — 차분한 남성</option>
+      <option value="verse">Verse — 부드러운 남성</option>
+      <option value="ballad">Ballad — 따뜻한 남성</option>
+      <option value="cedar">Cedar — 자연스러운 남성</option>
+      <option value="alloy">Alloy — 중성</option>
+      <option value="coral">Coral — 밝은 여성</option>
+    </select>
+
+    <label>🤖 로봇 목소리 효과</label>
+    <select id="robotSelect">
+      <option value="off">끄기 (자연스러운 목소리)</option>
+      <option value="mild">약하게</option>
+      <option value="strong">강하게 (추천)</option>
+      <option value="extreme">최강</option>
+    </select>
+
+    <label>🧒 태림이 소개 (범블봇이 태림이를 잘 알고 대화해요)</label>
+    <textarea id="kidInfoInput" rows="9" style="width:100%;padding:14px;border:2px solid #d8e5fb;border-radius:14px;font-size:13px;font-family:inherit;box-sizing:border-box;line-height:1.6;resize:vertical"></textarea>
+    <p style="font-size:12px;color:#7a8a9e;margin:6px 0 0">※ 이 정보는 이 기기에만 저장돼요 (인터넷에 안 올라가요). 자유롭게 고쳐도 돼요.</p>
+
+    <div class="modal-btns">
+      <button class="btn-primary" onclick="saveSettings()">💾 저장</button>
+      <button class="btn-ghost" onclick="closeSettings()">닫기</button>
+    </div>
+
+    <details>
+      <summary>📖 OpenAI 키 받는 곳</summary>
+      <ol>
+        <li><a href="https://platform.openai.com/api-keys" target="_blank" style="color:#1d63ff;font-weight:700">platform.openai.com/api-keys</a> 접속</li>
+        <li>탑뱅커AI 만들 때 받은 키 그대로 쓰거나, "Create new secret key"로 새로 만들기</li>
+        <li>sk-로 시작하는 키 복사해서 위에 붙여넣기 → 저장</li>
+      </ol>
+    </details>
+
+    <details>
+      <summary>💰 비용 안내 (중요)</summary>
+      <ol style="list-style:none;padding-left:0">
+        <li>• 무료 한도 없음 — 대화하는 동안 분당 과금</li>
+        <li>• gpt-realtime-mini라 일반보다 훨씬 저렴</li>
+        <li>• 대략 1분 대화에 수십 원 수준</li>
+        <li>• 대화 안 할 땐 비용 0 — 다 쓰면 "대화 끝내기"를 꼭 눌러요</li>
+      </ol>
+    </details>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  범블봇 — GPT Realtime mini 음성 대화 (비전 + 로봇 음성)
+// ============================================================
+const MODEL = 'gpt-realtime-mini';
+
+let pc = null;            // RTCPeerConnection
+let dc = null;            // data channel
+let localStream = null;   // 마이크
+let audioCtx = null;
+let isActive = false;
+let photoDataUrl = null;
+let botSpeaking = false;
+
+// --- 설정 저장 ---
+function getKey(){ return localStorage.getItem('openai_api_key') || ''; }
+function getVoice(){ return localStorage.getItem('bot_voice') || 'ash'; }
+function getRobot(){ return localStorage.getItem('bot_robot') || 'strong'; }
+
+const DEFAULT_KID_INFO = `- 이름: 태림 (항상 "태림아"라고 다정하게 불러줘)
+- 나이: 6살
+- 좋아하는 것: 트랜스포머, 로봇, 스파이더맨, 아이언맨
+- 형: 이찬이 형 (초등학교 1학년)
+- 성격: 아주 활발하고 씩씩함
+- 다니는 곳: 유치원, 태권도
+- 친한 친구: 고태희
+- 좋아하는 간식: 과자, 짜요짜요
+- 영어 목표: 기초 단어를 배우고, 사진을 영어로 설명하고, 짧은 의문문과 짧은 문장을 말할 수 있게 되기`;
+
+function getKidInfo(){
+  const v = localStorage.getItem('kid_info');
+  return (v !== null && v !== undefined) ? v : DEFAULT_KID_INFO;
+}
+
+function openSettings(){
+  const k = getKey();
+  document.getElementById('keyStatus').innerHTML = k
+    ? `✅ 키 설정됨 (${k.slice(0,7)}...)`
+    : '❌ 아직 키가 없어요. 아래에 넣어주세요.';
+  document.getElementById('keyInput').value = k;
+  document.getElementById('voiceSelect').value = getVoice();
+  document.getElementById('robotSelect').value = getRobot();
+  document.getElementById('kidInfoInput').value = getKidInfo();
+  document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettings(){ document.getElementById('settingsModal').classList.remove('show'); }
+function saveSettings(){
+  const k = document.getElementById('keyInput').value.trim();
+  if(k) localStorage.setItem('openai_api_key', k); else localStorage.removeItem('openai_api_key');
+  localStorage.setItem('bot_voice', document.getElementById('voiceSelect').value);
+  localStorage.setItem('bot_robot', document.getElementById('robotSelect').value);
+  localStorage.setItem('kid_info', document.getElementById('kidInfoInput').value);
+  closeSettings();
+  showToast('💾 저장 완료!', 'success');
+  updateReady();
+}
+
+// --- 사진 업로드 ---
+function handlePhoto(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    // 리사이즈 (긴 변 768px) — 토큰 절약
+    const img = new Image();
+    img.onload = () => {
+      const max = 768;
+      let w = img.width, h = img.height;
+      if(w > h && w > max){ h = h * max / w; w = max; }
+      else if(h > max){ w = w * max / h; h = max; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      photoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      const prev = document.getElementById('photoPreview');
+      prev.innerHTML = `<img src="${photoDataUrl}" alt="사진">`;
+      updateReady();
+      showToast('📷 사진 준비 완료!', 'success');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+document.getElementById('fileInput').addEventListener('change', e => handlePhoto(e.target.files[0]));
+document.getElementById('camInput').addEventListener('change', e => handlePhoto(e.target.files[0]));
+
+function updateReady(){
+  document.getElementById('talkBtn').disabled = !getKey();
+  if(!getKey()) document.getElementById('hint').innerHTML = '⚙️에서 OpenAI 키를 먼저 넣어주세요.';
+  else if(!photoDataUrl) document.getElementById('hint').innerHTML = '바로 대화해도 되고, 사진을 올려서 사진 보고 대화해도 돼요! 🎤';
+  else document.getElementById('hint').innerHTML = '사진 준비 완료! "대화 시작하기"를 눌러요. 🎤';
+}
+
+// --- 시스템 프롬프트 (태림이 맞춤) ---
+function buildInstructions(){
+  return `너는 '범블봇'이라는 친절하고 씩씩한 변신로봇 캐릭터야. 한국 아이에게 영어를 가르치는 다정한 선생님이자 친구야.
+
+[지금 함께하는 아이에 대해]
+${getKidInfo()}
+
+[대화 규칙]
+1. 위 아이 정보를 잘 활용해서, 원래 아이를 아는 친한 로봇 친구처럼 대화해. 아이가 좋아하는 것(로봇, 트랜스포머, 스파이더맨 등)을 대화에 자연스럽게 섞으면 더 좋아해.
+2. 아이는 영어를 이제 막 시작했어. 알파벳은 알고 "I am Bumblebee" 같은 짧은 문장을 말할 수 있어. 어려운 단어나 긴 문장은 절대 쓰지 마.
+3. 기본은 한국어로 다정하게 말하면서, 짧고 쉬운 영어 한 문장씩 가르쳐줘. 영어 문장은 3~5단어를 넘지 마.
+4. 항상 이 흐름으로: ① 한국어로 친근하게 말 걸기 → ② 짧은 영어 문장 알려주기 → ③ "따라 해볼까?" → ④ 아이가 따라 하면 한국어로 신나게 칭찬하기.
+5. 영어 목표(사진을 영어로 설명하기, 짧은 의문문 말하기, 짧은 문장 말하기)를 향해 조금씩 이끌어줘. 예: "What is this?", "It is a robot." 같은 짧고 쉬운 표현.
+6. 아이가 틀려도 절대 혼내지 마. "거의 다 했어! 한 번 더 해볼까?"처럼 다정하게 격려해.
+7. 한 번에 한 문장씩만 말해. 길게 설명하지 마. 천천히, 또박또박. 가끔 "삐빕!" 같은 로봇 소리를 섞어도 좋아.
+8. 태림이가 말을 할 때마다 별을 하나씩 모은다고 가끔 알려줘. "오! 별 하나 획득! 삐빕!"처럼 신나게. 태림이가 계속 말하고 싶게 만들어줘.
+9. 태림이가 조용하거나 머뭇거리면 먼저 말을 걸어줘. "태림아, 이거 영어로 말해볼까?"처럼 이끌어줘. 절대 가만히 기다리기만 하지 마.
+
+[사진 대화]
+- 시작할 때 사진을 보고 한국어로 신나게 "와! 태림아, 이 사진 좀 봐! 여기 뭐가 보여?"처럼 물어봐.
+- 아이가 답하면, 그게 영어로 뭔지 짧게 알려주고 따라 하게 해. 그다음 "What is this?" 같은 짧은 의문문도 같이 연습시켜줘.
+- 예: 아이가 "강아지!"라고 하면 → "맞아! 강아지는 영어로 dog이야. 따라 해볼까? Dog!" → "이번엔 같이 물어보자. What is this? It is a dog!"
+
+지금 바로 사진을 보고 한국어로 신나게 첫 인사와 질문을 시작해.`;
+}
+
+// --- 대화 시작/종료 ---
+function toggleTalk(){
+  if(isActive) stopTalk();
+  else startTalk();
+}
+
+async function startTalk(){
+  if(!getKey()){ showToast('⚠️ 먼저 OpenAI 키를 넣어주세요', 'fail'); openSettings(); return; }
+
+  setStatus('범블봇을 부르는 중... 🐝', '');
+  document.getElementById('talkBtn').disabled = true;
+
+  try {
+    // 1) 마이크
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // 2) 오디오 컨텍스트 (로봇 효과용)
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') await audioCtx.resume();
+
+    // 3) 임시 토큰 발급 (client_secrets)
+    console.log('[범블봇] 토큰 발급 중...');
+    const tokenResp = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session: {
+          type: 'realtime',
+          model: MODEL,
+          instructions: buildInstructions(),
+          audio: { output: { voice: getVoice() } }
+        }
+      })
+    });
+    if(!tokenResp.ok){
+      const t = await tokenResp.text();
+      console.error('[범블봇] 토큰 발급 실패:', tokenResp.status, t);
+      if(tokenResp.status === 401) throw new Error('AUTH');
+      if(tokenResp.status === 429) throw new Error('QUOTA');
+      throw new Error('TOKEN_' + tokenResp.status + ': ' + t.slice(0,150));
+    }
+    const tokenData = await tokenResp.json();
+    const ephemeralKey = tokenData.value || (tokenData.client_secret && tokenData.client_secret.value);
+    if(!ephemeralKey) throw new Error('NO_EPHEMERAL: ' + JSON.stringify(tokenData).slice(0,150));
+    console.log('[범블봇] 토큰 발급 성공');
+
+    // 4) WebRTC 연결
+    pc = new RTCPeerConnection();
+
+    // 봇 음성 받기 (로봇 효과 적용)
+    pc.ontrack = (e) => {
+      console.log('[범블봇] 봇 음성 트랙 수신');
+      const stream = e.streams[0];
+      const audioEl = document.getElementById('botAudio');
+      audioEl.srcObject = stream;
+      applyRobotVoice(stream, audioEl);
+    };
+
+    // 마이크 송신
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+    // 데이터 채널
+    dc = pc.createDataChannel('oai-events');
+    dc.onopen = () => {
+      console.log('[범블봇] 데이터 채널 열림');
+      configureSession();
+      setTimeout(() => sendPhotoAndStart(), 400);
+    };
+    dc.onmessage = (e) => handleEvent(JSON.parse(e.data));
+
+    // SDP offer
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    console.log('[범블봇] SDP 교환 중...');
+    const sdpResp = await fetch('https://api.openai.com/v1/realtime/calls?model=' + MODEL, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + ephemeralKey, 'Content-Type': 'application/sdp' },
+      body: offer.sdp
+    });
+    if(!sdpResp.ok){
+      const t = await sdpResp.text();
+      console.error('[범블봇] SDP 교환 실패:', sdpResp.status, t);
+      throw new Error('SDP_' + sdpResp.status + ': ' + t.slice(0,150));
+    }
+    const answerSdp = await sdpResp.text();
+    await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+    console.log('[범블봇] WebRTC 연결 완료!');
+
+    isActive = true;
+    resetStars();
+    document.getElementById('talkBtn').disabled = false;
+    document.getElementById('talkBtn').className = 'talk-btn stop';
+    document.getElementById('talkBtn').textContent = '⏹ 대화 끝내기';
+    document.getElementById('transcript').classList.add('show');
+    setStatus('범블봇이 사진을 보는 중... 🐝', 'listening');
+
+  } catch(err){
+    console.error('[범블봇] 오류:', err);
+    document.getElementById('talkBtn').disabled = false;
+    let msg = '연결 실패: ' + err.message;
+    if(err.message === 'AUTH') msg = '⚠️ API 키가 잘못됐어요. ⚙️에서 다시 확인하세요.';
+    else if(err.message === 'QUOTA') msg = '⚠️ OpenAI 사용 한도 초과 또는 결제 확인 필요';
+    else if(err.message && err.message.includes('Failed to fetch')) msg = '⚠️ 연결 차단됨 (CORS). 캡쳐해서 알려주세요.';
+    else if(err.name === 'NotAllowedError') msg = '⚠️ 마이크 권한을 허용해주세요.';
+    showToast(msg, 'fail', 5000);
+    setStatus('사진을 올리고 대화를 시작해요!', '');
+    cleanup();
+  }
+}
+
+function configureSession(){
+  // 세션 설정 (instructions, 음성, 턴 감지)
+  dc.send(JSON.stringify({
+    type: 'session.update',
+    session: {
+      type: 'realtime',
+      instructions: buildInstructions(),
+      audio: {
+        input: {
+          turn_detection: { type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 1000 }
+        },
+        output: { voice: getVoice() }
+      }
+    }
+  }));
+}
+
+function sendPhotoAndStart(){
+  if(photoDataUrl){
+    // 사진이 있으면: 사진 보고 대화 시작
+    dc.send(JSON.stringify({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message', role: 'user',
+        content: [
+          { type: 'input_image', image_url: photoDataUrl, detail: 'low' },
+          { type: 'input_text', text: '이 사진을 보고 태림이랑 영어 대화를 시작해줘. 한국어로 신나게 "와 태림아! 뭐가 보여?" 하고 물어봐.' }
+        ]
+      }
+    }));
+  } else {
+    // 사진이 없으면: 그냥 신나게 인사하고 시작
+    dc.send(JSON.stringify({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message', role: 'user',
+        content: [
+          { type: 'input_text', text: '태림이한테 신나게 인사하고 영어 놀이를 시작해줘. "삐빕! 안녕 태림아! 나는 범블봇이야!"처럼 밝게 인사한 다음, 태림이가 좋아하는 로봇이나 스파이더맨 얘기로 짧은 영어 한 문장을 가르쳐줘.' }
+        ]
+      }
+    }));
+  }
+  dc.send(JSON.stringify({ type: 'response.create' }));
+}
+
+// --- 이벤트 처리 ---
+let curBotText = '';
+let curKidText = '';
+function handleEvent(ev){
+  switch(ev.type){
+    case 'response.created':
+      botSpeaking = true;
+      setStatus('범블봇이 말하는 중... 🗣️', 'speaking');
+      curBotText = '';
+      break;
+    case 'response.output_audio_transcript.delta':
+    case 'response.audio_transcript.delta':
+      curBotText += (ev.delta || '');
+      break;
+    case 'response.output_audio_transcript.done':
+    case 'response.audio_transcript.done':
+      if(curBotText.trim()) addMsg('bot', curBotText.trim());
+      curBotText = '';
+      break;
+    case 'response.done':
+      botSpeaking = false;
+      setStatus('태림아, 따라 말해봐! 🎤', 'listening');
+      break;
+    case 'input_audio_buffer.speech_started':
+      setStatus('듣고 있어요... 👂', 'listening');
+      break;
+    case 'conversation.item.input_audio_transcription.completed':
+      if(ev.transcript && ev.transcript.trim()){
+        addMsg('kid', ev.transcript.trim());
+        addStar();
+      }
+      break;
+    case 'error':
+      console.error('[범블봇] 서버 오류:', ev.error);
+      showToast('⚠️ ' + (ev.error && ev.error.message ? ev.error.message.slice(0,80) : '오류'), 'fail', 4000);
+      break;
+  }
+}
+
+// --- 로봇 음성 효과 ---
+function applyRobotVoice(stream, audioEl){
+  const level = getRobot();
+  if(level === 'off'){
+    audioEl.muted = false;
+    return;
+  }
+  try {
+    audioEl.muted = true; // Web Audio로 재생
+    const src = audioCtx.createMediaStreamSource(stream);
+    const cfg = {
+      mild:    { lowpass: 3400, dist: 1.5, ringFreq: 0,  wet: 0 },
+      strong:  { lowpass: 2900, dist: 1.9, ringFreq: 50, wet: 0.38 },
+      extreme: { lowpass: 2400, dist: 2.5, ringFreq: 32, wet: 0.6 }
+    }[level] || { lowpass: 2900, dist: 1.9, ringFreq: 50, wet: 0.38 };
+
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 110;
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = cfg.lowpass; lp.Q.value = 0.7;
+    const dist = audioCtx.createWaveShaper();
+    const curve = new Float32Array(256);
+    for(let i=0;i<256;i++){ const x=(i/128)-1; curve[i]=Math.tanh(x*cfg.dist); }
+    dist.curve = curve; dist.oversample = '2x';
+    const out = audioCtx.createGain(); out.gain.value = 1.0;
+
+    src.connect(hp); hp.connect(lp); lp.connect(dist);
+    if(cfg.wet > 0){
+      const dry = audioCtx.createGain(); dry.gain.value = 1 - cfg.wet;
+      const wetG = audioCtx.createGain(); wetG.gain.value = cfg.wet * 1.4;
+      const ring = audioCtx.createGain(); ring.gain.value = 0;
+      const osc = audioCtx.createOscillator(); osc.type='sine'; osc.frequency.value=cfg.ringFreq;
+      osc.connect(ring.gain); osc.start();
+      dist.connect(dry); dist.connect(ring); ring.connect(wetG);
+      dry.connect(out); wetG.connect(out);
+    } else {
+      dist.connect(out);
+    }
+    const comp = audioCtx.createDynamicsCompressor();
+    comp.threshold.value=-12; comp.knee.value=20; comp.ratio.value=6;
+    comp.attack.value=0.003; comp.release.value=0.25;
+    out.connect(comp); comp.connect(audioCtx.destination);
+    console.log('[범블봇] 로봇 음성 효과 적용:', level);
+  } catch(e){
+    console.warn('[범블봇] 로봇 효과 실패, 일반 재생:', e);
+    audioEl.muted = false;
+  }
+}
+
+function stopTalk(){
+  cleanup();
+  setStatus('대화가 끝났어요! 또 하고 싶으면 시작을 눌러요 🐝', '');
+  document.getElementById('talkBtn').className = 'talk-btn start';
+  document.getElementById('talkBtn').textContent = '🎤 대화 시작하기';
+  document.getElementById('talkBtn').disabled = false;
+  showToast('대화 끝! 비용 절약을 위해 잘 끄셨어요 👍', 'success');
+}
+
+function cleanup(){
+  isActive = false; botSpeaking = false;
+  if(dc){ try{ dc.close(); }catch(e){} dc = null; }
+  if(pc){ try{ pc.close(); }catch(e){} pc = null; }
+  if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
+}
+
+// --- UI ---
+function setStatus(text, botClass){
+  document.getElementById('botStatus').textContent = text;
+  const bot = document.getElementById('bot');
+  bot.className = 'bot' + (botClass ? ' ' + botClass : '');
+}
+function addMsg(who, text){
+  const t = document.getElementById('transcript');
+  const div = document.createElement('div');
+  div.className = 'msg ' + who;
+  div.textContent = (who === 'bot' ? '🤖 ' : '🧒 ') + text;
+  t.appendChild(div);
+  t.scrollTop = t.scrollHeight;
+}
+let starCount = 0;
+function addStar(){
+  starCount++;
+  const el = document.getElementById('stars');
+  if(!el) return;
+  // 최근 10개만 별로 표시 (그 이상은 숫자로)
+  const shown = Math.min(starCount, 10);
+  el.textContent = '⭐'.repeat(shown) + (starCount > 10 ? ' +' + (starCount-10) : '');
+  // 마지막 별 반짝 효과
+  el.style.transform = 'scale(1.3)';
+  setTimeout(()=> el.style.transform = 'scale(1)', 200);
+  el.style.transition = 'transform .2s';
+  if(starCount === 5) showToast('🌟 별 5개! 태림이 최고!', 'success', 2000);
+  if(starCount === 10) showToast('🏆 별 10개! 우와 대단해!', 'success', 2500);
+}
+function resetStars(){ starCount = 0; const el = document.getElementById('stars'); if(el) el.textContent = ''; }
+
+let toastTimer = null;
+function showToast(text, type='', dur=2500){
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.className='toast', dur);
+}
+
+window.addEventListener('beforeunload', cleanup);
+updateReady();
+</script>
+</body>
+</html>
