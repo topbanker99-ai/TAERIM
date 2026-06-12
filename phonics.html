@@ -1,0 +1,2352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>소리 로켓 수리 대작전 — 파닉스 Lv1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --space:#0E1B3D; --space2:#1C2B5A;
+  --sky:#EAF4FF; --navy:#1C2B4A;
+  --sun:#FFB400; --sun2:#FFC947;
+  --mint:#28C7A0; --coral:#FF6B6B; --grape:#7C5CFF; --pink:#FF8FB1; --blue:#3FA7FF; --teal:#19B8C4;
+  --white:#fff; --line:#C9DCF5;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{user-select:none;-webkit-user-select:none}
+body{
+  font-family:'Jua',sans-serif;color:var(--navy);min-height:100vh;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(124,92,255,.18), transparent 35%),
+    radial-gradient(circle at 80% 80%, rgba(63,167,255,.15), transparent 40%),
+    var(--space);
+}
+.en{font-family:'Baloo 2',sans-serif;font-weight:800}
+/* 별빛 배경 */
+.starfield{position:fixed;inset:0;pointer-events:none;z-index:0}
+.starfield i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:.5;animation:tw 3s infinite}
+@keyframes tw{0%,100%{opacity:.2}50%{opacity:.8}}
+
+header{
+  position:relative;z-index:2;color:#fff;
+  padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo .rocket{font-size:34px;filter:drop-shadow(0 0 8px rgba(255,180,0,.6))}
+.logo h1{font-size:20px}
+.logo .sub{font-size:12px;opacity:.7}
+.star-bank{
+  margin-left:auto;display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.12);padding:7px 16px;border-radius:999px;font-size:16px;color:#fff;
+}
+.hbtn{
+  background:rgba(255,255,255,.12);border:0;color:#fff;font-size:16px;
+  padding:9px 14px;border-radius:12px;cursor:pointer;font-family:'Jua';
+}
+.hbtn:hover{background:rgba(255,255,255,.22)}
+
+main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:0 18px 50px}
+
+/* ===== 화면 전환 ===== */
+.screen{display:none}
+.screen.on{display:block;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+
+/* ===== 홈: 로봇 + 로켓 게이지 + 행성 맵 ===== */
+.hero{
+  display:flex;gap:22px;align-items:center;flex-wrap:wrap;
+  background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.12);
+  border-radius:26px;padding:20px 24px;color:#fff;margin-bottom:22px;
+}
+.robot-stage{
+  width:150px;height:170px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.07);border-radius:22px;cursor:pointer;position:relative;
+}
+.robot-stage:hover{background:rgba(255,255,255,.12)}
+.robot-stage .edit-tag{
+  position:absolute;bottom:8px;font-size:11px;background:var(--sun);color:var(--navy);
+  border-radius:999px;padding:2px 10px;
+}
+.robot-stage .tf-tag{
+  position:absolute;top:8px;right:8px;font-size:12px;background:var(--mint);color:#fff;
+  border-radius:999px;padding:4px 12px;cursor:pointer;z-index:2;
+  box-shadow:0 3px 0 rgba(0,0,0,.25);transition:transform .08s;
+}
+.robot-stage .tf-tag:active{transform:scale(.9)}
+#robotSvgWrap{transition:transform .24s ease}
+#robotSvgWrap.flipping{transform:rotateY(90deg) scale(.85)}
+#robotSvgWrap.driving{animation:drive 1.05s ease-in-out infinite}
+@keyframes drive{0%,100%{transform:translateX(-12px) rotate(-1.5deg)}50%{transform:translateX(12px) rotate(1.5deg)}}
+.hero-info{flex:1;min-width:240px}
+.hero-info h2{font-size:21px;margin-bottom:6px}
+.hero-info p{font-size:14px;opacity:.8;line-height:1.5}
+.rocket-gauge{
+  display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap;
+}
+.part-slot{
+  width:46px;height:46px;border-radius:13px;border:2px dashed rgba(255,255,255,.3);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+}
+.part-slot.got{border-style:solid;border-color:var(--sun);background:rgba(255,180,0,.18);animation:slotpop .3s}
+@keyframes slotpop{from{transform:scale(.5)}to{transform:scale(1)}}
+.gauge-label{font-size:13px;opacity:.8;width:100%}
+
+.map-title{color:#fff;font-size:18px;margin:0 0 12px 4px}
+.galaxy-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:680px){.galaxy-row{grid-template-columns:repeat(3,1fr)}}
+.galaxy{
+  border:0;cursor:pointer;border-radius:18px;padding:12px 6px;text-align:center;font-family:'Jua';
+  color:#fff;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.14);transition:.15s;
+}
+.galaxy:hover:not(.locked){transform:translateY(-3px);background:rgba(255,255,255,.13)}
+.galaxy .gi{font-size:26px;display:block}
+.galaxy .gn{font-size:12px;margin-top:4px}
+.galaxy .gp{font-size:11px;opacity:.7;margin-top:2px}
+.galaxy.sel{border-color:var(--sun);background:rgba(255,180,0,.16);box-shadow:0 0 16px rgba(255,180,0,.3)}
+.galaxy.locked{opacity:.38;cursor:default;filter:grayscale(.7)}
+.galaxy.taste{opacity:.72}
+.galaxy.taste:hover{opacity:.95}
+.galaxy.done .gi::after{content:' ✅';font-size:13px}
+.dash-grid{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))!important}
+.planet-track{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+}
+@media(max-width:680px){.planet-track{grid-template-columns:repeat(2,1fr)}}
+.planet{
+  border:0;cursor:pointer;border-radius:24px;padding:18px 12px 16px;text-align:center;
+  font-family:'Jua';position:relative;transition:.15s;color:#fff;
+  background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.14);
+}
+.planet:hover:not(.locked){transform:translateY(-4px);background:rgba(255,255,255,.13)}
+.planet .orb{
+  width:84px;height:84px;border-radius:50%;margin:0 auto 8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:44px;font-family:'Baloo 2';font-weight:800;color:#fff;
+  box-shadow:inset -10px -12px 0 rgba(0,0,0,.18), 0 0 22px rgba(255,255,255,.15);
+}
+.planet .pname{font-size:15px}
+.planet .pstate{font-size:12px;opacity:.75;margin-top:3px}
+.planet.locked{opacity:.4;cursor:default;filter:grayscale(.6)}
+.planet.cleared .orb{box-shadow:inset -10px -12px 0 rgba(0,0,0,.18), 0 0 26px var(--sun)}
+.planet .flag{position:absolute;top:8px;right:12px;font-size:22px;display:none}
+.planet.cleared .flag{display:block}
+.bottom-nav{
+  display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;
+}
+.nav-card{
+  flex:1;min-width:200px;border:0;cursor:pointer;border-radius:20px;padding:16px;
+  font-family:'Jua';font-size:16px;color:#fff;text-align:left;
+  background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.14);transition:.15s;
+}
+.nav-card:hover{background:rgba(255,255,255,.13);transform:translateY(-2px)}
+.nav-card .ico{font-size:26px;display:block;margin-bottom:6px}
+.nav-card .nd{font-size:12px;opacity:.7;display:block;margin-top:3px}
+.nav-card.lockd{opacity:.45}
+
+/* ===== 행성 미션 화면 ===== */
+.panel{
+  background:var(--white);border-radius:26px;padding:24px;
+  border:3px solid var(--navy);box-shadow:0 8px 0 rgba(0,0,0,.25);
+}
+.mission-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.back-btn{
+  border:0;background:var(--sky);font-family:'Jua';font-size:14px;
+  padding:10px 18px;border-radius:999px;cursor:pointer;
+}
+.mission-head h2{font-size:19px}
+.step-dots{margin-left:auto;display:flex;gap:8px}
+.step-dot{
+  width:34px;height:34px;border-radius:50%;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:15px;background:#fff;
+}
+.step-dot.cur{border-color:var(--sun);background:#FFF6DC}
+.step-dot.ok{border-color:var(--mint);background:#E8FBF5}
+
+.mstep{display:none}
+.mstep.on{display:block;animation:pop .2s}
+
+/* step1 소리 만나기 */
+.meet{text-align:center}
+.meet .huge{font-size:110px;font-family:'Baloo 2';font-weight:800;line-height:1}
+.meet .act{
+  font-size:17px;margin:12px auto;max-width:440px;
+  background:#FFF6DC;border-radius:16px;padding:12px 18px;display:inline-block;
+}
+.btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.pill{
+  font-family:'Jua';font-size:16px;border:0;cursor:pointer;border-radius:999px;
+  padding:13px 26px;color:#fff;background:var(--navy);box-shadow:0 4px 0 rgba(28,43,74,.3);transition:.1s;
+}
+.pill:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(28,43,74,.3)}
+.pill.sun{background:linear-gradient(135deg,var(--sun),var(--sun2));color:var(--navy)}
+.pill.mint{background:var(--mint)}
+.pill:disabled{opacity:.4;cursor:default}
+
+/* 소리 만나기: 글자 ➜ 그림 페어 카드 */
+.meet-pair{
+  display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:14px;
+}
+.mp-letter{
+  width:130px;height:130px;border-radius:32px;cursor:pointer;border:0;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  font-family:'Baloo 2';font-weight:800;
+  box-shadow:inset -10px -12px 0 rgba(0,0,0,.16), 0 7px 0 rgba(28,43,74,.25);
+  transition:transform .1s;
+}
+.mp-letter:active{transform:scale(.93)}
+.mp-arrow{font-size:34px;color:#FFB400;animation:arrowSlide 1.2s ease-in-out infinite}
+@keyframes arrowSlide{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}
+.mp-word{
+  border:3px solid var(--navy);background:#FBFDFF;border-radius:26px;cursor:pointer;
+  padding:14px 26px;text-align:center;font-family:'Jua';
+  box-shadow:0 6px 0 rgba(28,43,74,.18);transition:transform .1s;
+}
+.mp-word:active{transform:scale(.94)}
+.mp-emoji{display:block;font-size:64px;line-height:1.1;animation:emojiBounce 1.6s ease-in-out infinite}
+@keyframes emojiBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-7px) scale(1.06)}}
+.mp-en{display:block;font-family:'Baloo 2';font-weight:800;font-size:27px;color:var(--navy);margin-top:4px}
+.mp-ko{display:block;font-family:'Noto Sans KR';font-weight:500;font-size:15px;color:#3D4E73;margin-top:2px}
+/* 퀴즈 완성 그림 점프 */
+.quiz-pic{transition:transform .2s}
+.quiz-pic.party{animation:picParty .6s ease}
+@keyframes picParty{0%{transform:scale(1)}40%{transform:scale(1.45) rotate(-8deg)}70%{transform:scale(1.2) rotate(6deg)}100%{transform:scale(1)}}
+/* step2a 사운드 풍선 */
+.balloon-zone{text-align:center}
+.balloon-q{font-size:17px;margin-bottom:6px}
+.balloon-row{display:flex;gap:22px;justify-content:center;margin:24px 0 10px;flex-wrap:wrap}
+.balloon{
+  width:104px;height:124px;border:0;cursor:pointer;border-radius:50% 50% 48% 48%/55% 55% 45% 45%;
+  font-size:50px;font-family:'Baloo 2';font-weight:800;color:#fff;
+  box-shadow:inset -8px -10px 0 rgba(0,0,0,.15), 0 6px 0 rgba(0,0,0,.12);
+  position:relative;transition:.15s;animation:float 2.6s ease-in-out infinite;
+}
+.balloon:nth-child(2){animation-delay:.4s}
+.balloon:nth-child(3){animation-delay:.8s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.balloon::after{
+  content:'';position:absolute;bottom:-26px;left:50%;width:2px;height:26px;background:rgba(255,255,255,.6);
+}
+.balloon.pop{animation:bpop .35s forwards}
+@keyframes bpop{to{transform:scale(1.5);opacity:0}}
+.balloon.shake{animation:bshake .3s}
+@keyframes bshake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.game-score{font-size:14px;color:#3D4E73;margin-top:18px}
+
+/* step2b 따라쓰기 */
+.trace-zone{text-align:center}
+.trace-wrap{
+  position:relative;width:280px;height:280px;margin:14px auto;
+  border:3px dashed var(--line);border-radius:22px;background:#FBFDFF;touch-action:none;
+}
+.trace-wrap canvas{position:absolute;inset:0;border-radius:20px}
+.trace-meter{
+  width:280px;height:12px;margin:0 auto;background:var(--sky);border-radius:99px;overflow:hidden;
+}
+.trace-meter i{display:block;height:100%;background:var(--mint);width:0%;transition:width .2s;border-radius:99px}
+
+/* step3 보스: 단어 조립 */
+.quiz-head{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:8px}
+.quiz-pic{font-size:62px}
+.quiz-ko{font-size:21px}
+.builder{display:flex;justify-content:center;align-items:center;gap:10px;margin:20px 0 8px}
+.slot{
+  width:84px;height:100px;border:4px dashed var(--line);border-radius:18px;
+  display:flex;align-items:center;justify-content:center;font-size:52px;
+  font-family:'Baloo 2';font-weight:800;background:#FBFDFF;color:var(--navy);
+}
+.slot.filled{border-style:solid;border-color:var(--navy);background:#fff;animation:slotpop .18s}
+.slot.blend{border-color:var(--mint);background:#E8FBF5}
+.tile-tray{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:18px}
+.tile{
+  width:74px;height:88px;border:3px solid var(--navy);border-radius:16px;cursor:pointer;
+  font-size:44px;font-family:'Baloo 2';font-weight:800;color:#fff;
+  box-shadow:0 5px 0 rgba(28,43,74,.25);transition:.1s;
+}
+.tile:active{transform:translateY(3px)}
+.quiz-feedback{text-align:center;font-size:19px;min-height:32px;margin-top:14px}
+.quiz-feedback.good{color:var(--mint)}
+.quiz-feedback.bad{color:var(--coral)}
+.boss-progress{text-align:center;font-size:14px;color:#3D4E73;margin-top:4px}
+
+/* ===== 스토리(책) 화면 ===== */
+.shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:680px){.shelf{grid-template-columns:1fr}}
+.book{
+  border:0;cursor:pointer;border-radius:20px;padding:20px 14px;text-align:center;
+  font-family:'Jua';background:#fff;border:3px solid var(--navy);
+  box-shadow:0 6px 0 rgba(28,43,74,.2);transition:.15s;
+}
+.book:hover:not(.lockd){transform:translateY(-4px)}
+.book .cov{font-size:54px}
+.book .bt{font-size:17px;margin-top:6px}
+.book .bs{font-size:12px;color:#3D4E73;margin-top:3px}
+.book.lockd{opacity:.45;cursor:default;filter:grayscale(.5)}
+.reader{display:none;margin-top:20px;text-align:center}
+.reader.on{display:block;animation:pop .2s}
+.reader .scene{font-size:80px;margin-bottom:8px}
+.reader .line{
+  font-size:38px;font-family:'Baloo 2';font-weight:800;display:flex;gap:14px;justify-content:center;
+  flex-wrap:wrap;margin:14px 0;
+}
+.reader .line .w{
+  cursor:pointer;padding:4px 12px;border-radius:14px;transition:.12s;color:var(--navy);
+}
+.reader .line .w:hover{background:#FFF6DC}
+.reader .line .w.lit{background:var(--sun);color:#fff;transform:scale(1.08)}
+.reader .ko-line{font-size:15px;color:#3D4E73;margin-bottom:14px}
+.page-nav{display:flex;gap:12px;justify-content:center;margin-top:10px}
+
+/* ===== AI 소리봇 ===== */
+.rt-wrap{text-align:center}
+.rt-status{display:inline-block;background:#FFF6DC;border-radius:999px;padding:8px 22px;font-size:15px;margin-bottom:12px}
+.rt-stars{font-size:22px;min-height:30px;letter-spacing:2px}
+.rt-card{border:3px solid var(--sun);background:#FFFBEE;border-radius:22px;padding:22px;margin:12px auto;max-width:540px}
+.rt-card .label{font-size:14px;color:#8a6d1d;margin-bottom:6px}
+.rt-current{font-size:32px;font-family:'Baloo 2';font-weight:800;color:#B07900;min-height:44px;word-break:keep-all}
+.rt-korean{font-size:14px;color:#3D4E73;margin-top:8px;min-height:18px}
+.rt-dots{font-size:18px;color:var(--sun);margin-top:10px;letter-spacing:3px}
+.rt-btn{
+  font-family:'Jua';font-size:18px;border:0;cursor:pointer;border-radius:999px;
+  padding:15px 36px;color:var(--navy);background:linear-gradient(135deg,var(--sun),var(--sun2));
+  box-shadow:0 5px 0 rgba(176,121,0,.45);transition:.1s;margin-top:6px;
+}
+.rt-btn:active{transform:translateY(3px)}
+.rt-btn.stop{background:linear-gradient(135deg,var(--coral),#ff8f8f);color:#fff}
+.rt-hint{font-size:13px;color:#3D4E73;margin-top:12px}
+
+/* ===== 대시보드/모달/보상 (v1 유지) ===== */
+.dash-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:8px}
+@media(max-width:680px){.dash-grid{grid-template-columns:repeat(3,1fr)}}
+.dash-cell{border:2px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center;background:#fff}
+.dash-cell .ph{font-size:24px;font-family:'Baloo 2';font-weight:800}
+.dash-cell .pct{font-size:12px;color:#3D4E73}
+.dash-cell .mini{height:6px;background:var(--sky);border-radius:99px;margin-top:6px;overflow:hidden}
+.dash-cell .mini i{display:block;height:100%;background:var(--mint);width:0%;border-radius:99px}
+.dash-cell.done{border-color:var(--mint);background:#F0FCF8}
+
+.modal-bg{position:fixed;inset:0;background:rgba(10,18,40,.65);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:24px;padding:26px;max-width:540px;width:100%;max-height:85vh;overflow:auto;border:3px solid var(--navy)}
+.modal h3{font-size:19px;margin-bottom:14px}
+.modal label{font-size:13px;color:#3D4E73;display:block;margin:12px 0 6px}
+.modal input{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:12px;font-size:14px;font-family:monospace}
+.modal .close-x{float:right;border:0;background:var(--sky);width:34px;height:34px;border-radius:10px;font-size:16px;cursor:pointer}
+.report-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.report-row .ph{font-size:24px;font-family:'Baloo 2';font-weight:800;width:36px}
+.report-row .bar{flex:1;height:10px;background:var(--sky);border-radius:99px;overflow:hidden}
+.report-row .bar i{display:block;height:100%;border-radius:99px;background:var(--mint)}
+.report-row .num{font-size:13px;width:92px;text-align:right;color:#3D4E73}
+.report-tip{margin-top:14px;background:#FFF6DC;border-radius:14px;padding:12px 16px;font-size:14px}
+
+/* 로봇 꾸미기 */
+.custom-row{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 4px}
+.swatch{width:42px;height:42px;border-radius:12px;border:3px solid transparent;cursor:pointer}
+.swatch.sel{border-color:var(--navy)}
+.opt-btn{
+  border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 14px;
+  font-size:20px;cursor:pointer;font-family:'Jua';
+}
+.opt-btn.sel{border-color:var(--navy);background:var(--sky)}
+
+.confetti-layer{position:fixed;inset:0;pointer-events:none;z-index:99;overflow:hidden}
+.confetti{position:absolute;top:-20px;font-size:26px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.6}}
+.reward-pop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:98;background:rgba(10,18,40,.55)}
+.reward-pop.on{display:flex}
+.reward-card{
+  background:#fff;border:4px solid var(--sun);border-radius:28px;padding:34px 42px;text-align:center;
+  animation:rewardIn .4s cubic-bezier(.2,1.6,.4,1);
+}
+@keyframes rewardIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.reward-card .big{font-size:70px}
+.reward-card h2{font-size:23px;margin:10px 0 4px}
+.reward-card p{font-size:15px;color:#3D4E73;margin-bottom:18px}
+
+/* ===== 터치 최적화 ===== */
+@media(max-width:680px){
+  .pill{font-size:18px;padding:16px 30px;min-height:56px}
+  .tile{width:86px;height:102px;font-size:50px}
+  .balloon{width:112px;height:134px}
+  .slot{width:78px;height:94px}
+  .back-btn{padding:13px 22px;font-size:15px;min-height:48px}
+  .rt-btn{width:100%;font-size:20px;padding:18px}
+  .planet{padding:22px 12px 18px}
+  .planet .orb{width:96px;height:96px}
+  .nav-card{min-height:90px}
+  .galaxy{min-height:84px}
+}
+.pill,.tile,.balloon,.planet,.galaxy,.book,.nav-card,.opt-btn,.swatch{transition:transform .08s, box-shadow .08s}
+.pill:active,.tile:active,.book:active,.nav-card:active,.galaxy:active{transform:scale(.94)!important}
+.balloon:active{transform:scale(.9)!important}
+/* 로봇 둥실둥실 + 깜빡임 */
+.robot-stage svg{animation:bob 2.6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.robo-eye{animation:blink 4s infinite}
+@keyframes blink{0%,92%,100%{opacity:1}95%,97%{opacity:.1}}
+.robo-flame{animation:flame .35s ease-in-out infinite alternate;transform-origin:center top}
+@keyframes flame{from{transform:scaleY(.7)}to{transform:scaleY(1.15)}}
+.robo-core{animation:corePulse 1.8s ease-in-out infinite}
+@keyframes corePulse{0%,100%{opacity:.85}50%{opacity:1}}
+/* 터치 파티클 */
+.burst{position:fixed;pointer-events:none;z-index:97;font-size:20px;will-change:transform,opacity}
+/* ===== v9: ① 살아있는 글자 타일 ===== */
+.tile{position:relative;touch-action:none;overflow:visible}
+.t-eyes{position:absolute;top:7px;left:50%;transform:translateX(-50%);width:36px;height:11px;pointer-events:none}
+.t-eyes::before,.t-eyes::after{
+  content:'';position:absolute;top:0;width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 62% 62%, #1C2B4A 0 3.2px, #fff 3.2px);
+  box-shadow:0 1px 0 rgba(0,0,0,.2);
+}
+.t-eyes::before{left:3px}.t-eyes::after{right:3px}
+.tile.live{animation:tileWiggle .32s ease-in-out infinite;z-index:5}
+@keyframes tileWiggle{0%,100%{transform:rotate(-5deg) scale(1.08)}50%{transform:rotate(5deg) scale(1.12)}}
+.tile.drag-ghost{position:fixed;z-index:96;pointer-events:none;opacity:.92;transform:scale(1.12) rotate(-3deg);margin:0}
+
+/* ===== v9: ② 단어 뜻 연기 장면 ===== */
+.scene-stage{
+  position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;
+  background:rgba(14,27,61,.55);animation:pop .2s;
+}
+.scene-inner{
+  background:#fff;border:4px solid var(--sun);border-radius:26px;padding:26px 40px 20px;
+  text-align:center;position:relative;min-width:300px;
+}
+.scene-floor{display:flex;align-items:flex-end;justify-content:center;gap:8px;min-height:120px;position:relative}
+.scene-bot{display:inline-block}
+.scene-obj{font-size:72px;display:inline-block}
+.scene-word{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#B07900;margin-top:8px}
+.scene-ko{font-family:'Noto Sans KR';font-weight:500;font-size:15px;color:#3D4E73}
+.scene-zzz{position:absolute;top:-6px;right:30%;font-size:30px;opacity:0}
+/* 연기 동작들 */
+.act-cheer .scene-bot{animation:sbWalk 1s ease-out forwards, sbHop .5s ease 1.1s 2}
+.act-cheer .scene-obj{animation:sbHop .5s ease 1.1s 2}
+.act-sit .scene-bot{animation:sbWalk 1s ease-out forwards, sbSit .6s ease 1.15s forwards}
+.act-jump .scene-bot{animation:sbWalk .8s ease-out forwards, sbBigJump .7s ease .95s 2}
+.act-spin .scene-bot{animation:sbWalk .8s ease-out forwards, sbSpin 1s ease 1s 1}
+.act-stop .scene-bot{animation:sbDash .7s ease-out forwards, sbShake .4s ease .75s 1}
+.act-sleep .scene-bot{animation:sbWalk 1s ease-out forwards, sbLean .6s ease 1.15s forwards}
+.act-sleep .scene-zzz{animation:zzzFloat 1.4s ease 1.5s forwards}
+.act-float .scene-bot,.act-float .scene-obj{animation:sbFloat 2.4s ease-in-out infinite}
+@keyframes sbWalk{from{transform:translateX(-130px)}to{transform:translateX(0)}}
+@keyframes sbDash{from{transform:translateX(-150px)}to{transform:translateX(0)}}
+@keyframes sbHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+@keyframes sbSit{to{transform:translateY(14px) rotate(-4deg)}}
+@keyframes sbBigJump{0%,100%{transform:translateY(0)}50%{transform:translateY(-44px)}}
+@keyframes sbSpin{to{transform:rotate(720deg)}}
+@keyframes sbShake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+@keyframes sbLean{to{transform:rotate(8deg) translateY(6px)}}
+@keyframes zzzFloat{0%{opacity:0;transform:translateY(8px)}30%{opacity:1}100%{opacity:0;transform:translateY(-26px)}}
+@keyframes sbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+/* ===== v9: ③ 로봇 친구 동행 ===== */
+.buddy{position:fixed;left:12px;bottom:12px;z-index:40;display:none;align-items:flex-end;gap:7px}
+.buddy.show{display:flex}
+.buddy-bubble{
+  background:#fff;border:2.5px solid var(--navy);border-radius:14px;padding:6px 12px;
+  font-family:'Jua';font-size:14px;color:var(--navy);display:none;margin-bottom:34px;
+  box-shadow:0 3px 0 rgba(0,0,0,.2);
+}
+.buddy-bubble.show{display:block;animation:pop .18s}
+.buddy.jump #buddySvg{animation:buddyJump .55s ease}
+@keyframes buddyJump{0%,100%{transform:translateY(0)}45%{transform:translateY(-22px) rotate(-4deg)}}
+.buddy.sad #buddySvg{animation:buddyTilt .55s ease}
+@keyframes buddyTilt{25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}
+
+/* ===== v9: ⑤ 보너스 버블팝 ===== */
+.bonus-stage{position:fixed;inset:0;z-index:94;background:rgba(14,27,61,.94);display:none;overflow:hidden}
+.bonus-stage.on{display:block}
+.bonus-top{
+  position:absolute;top:0;left:0;right:0;text-align:center;padding:16px;color:#fff;
+  font-family:'Jua';font-size:19px;z-index:2;background:linear-gradient(rgba(14,27,61,.9),transparent);
+}
+.bonus-top b{color:var(--sun);font-family:'Baloo 2';font-size:24px}
+.bonus-timer{width:240px;height:12px;background:rgba(255,255,255,.18);border-radius:99px;margin:10px auto 4px;overflow:hidden}
+.bonus-timer i{display:block;height:100%;background:linear-gradient(90deg,var(--sun),var(--coral));width:100%;border-radius:99px;transition:width .25s linear}
+#bonusScore{font-size:17px;color:var(--sun)}
+.bubble{
+  position:absolute;bottom:-130px;border:0;cursor:pointer;border-radius:50%;
+  font-family:'Baloo 2';font-weight:800;color:#fff;
+  box-shadow:inset -7px -9px 0 rgba(0,0,0,.15), 0 0 18px rgba(255,255,255,.25);
+  animation:bubbleRise linear forwards;touch-action:manipulation;
+}
+@keyframes bubbleRise{to{transform:translateY(-115vh)}}
+.bubble.bpop{animation:bpop .3s forwards!important}
+.bubble.bwrong{animation:bshake .3s!important}
+
+/* ===== v9: ⑥ 콤보 글로우 ===== */
+#comboGlow{position:fixed;inset:0;pointer-events:none;z-index:35;transition:box-shadow .3s}
+#comboBadge{
+  position:fixed;top:74px;right:16px;z-index:45;display:none;
+  background:linear-gradient(135deg,var(--sun),var(--coral));color:#fff;
+  font-family:'Jua';font-size:17px;border-radius:999px;padding:8px 18px;
+  box-shadow:0 4px 0 rgba(0,0,0,.25);animation:pop .2s;
+}
+#comboBadge.show{display:block}
+
+/* ===== v9: ⑦ 소리 별자리 ===== */
+.constel{
+  background:rgba(255,255,255,.05);border:2px dashed rgba(255,255,255,.18);
+  border-radius:20px;padding:14px 18px;margin-bottom:22px;color:#fff;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:'Jua';font-size:15px;
+}
+.c-star{
+  width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 38% 32%, #FFF1B8, #FFB400);color:#1C2B4A;
+  font-family:'Baloo 2';font-weight:800;font-size:18px;
+  box-shadow:0 0 16px rgba(255,200,60,.85);animation:tw 2.4s infinite;
+}
+.c-dot{color:rgba(255,255,255,.4);font-size:18px}
+.constel .c-hint{font-family:'Noto Sans KR';font-weight:500;font-size:14px;color:rgba(255,255,255,.85)}
+
+/* ===== 시안 A: 또박또박 (제목·버튼 Jua / 본문 Noto Sans KR) + 크기 업 ===== */
+.logo .sub,.hero-info p,.gauge-label,.planet .pstate,.galaxy .gp,.nav-card .nd,
+.rt-hint,.rt-korean,.game-score,.boss-progress,.quiz-progress,
+.report-row .num,.report-tip,.modal label,.book .bs,.reader .ko-line,
+.dash-cell .pct,footer{
+  font-family:'Noto Sans KR',sans-serif;font-weight:500;letter-spacing:-.01em;
+}
+.logo .sub{font-size:13.5px;opacity:.95}
+.hero-info h2{font-size:22px}
+.hero-info p{font-size:15.5px;line-height:1.75;opacity:1;color:#EAF1FF}
+.gauge-label{font-size:14.5px;opacity:.95}
+.map-title{font-size:19px}
+.planet .pname{font-size:16.5px}
+.planet .pstate{font-size:14px;opacity:.95;margin-top:4px}
+.galaxy .gn{font-size:13px}
+.galaxy .gp{font-size:12.5px;opacity:.95}
+.nav-card{font-size:17px}
+.nav-card .nd{font-size:13.5px;opacity:.95;line-height:1.55}
+.mission-head h2{font-size:20px}
+.back-btn{font-size:15px}
+.meet .act{font-size:18px;line-height:1.6}
+.balloon-q{font-size:18px}
+.pill{font-size:17px}
+.quiz-ko{font-size:23px}
+.quiz-feedback{font-size:21px}
+.game-score,.boss-progress,.quiz-progress{font-size:15px}
+.rt-status{font-size:16px}
+.rt-current{font-size:34px}
+.rt-korean{font-size:15.5px;line-height:1.6}
+.rt-btn{font-size:19px}
+.rt-hint{font-size:14.5px;line-height:1.6}
+.book .bt{font-size:18px}
+.book .bs{font-size:13.5px;line-height:1.5}
+.reader .ko-line{font-size:16.5px}
+.dash-cell .pct{font-size:13.5px}
+.modal h3{font-size:20px}
+.modal label{font-size:14px}
+.report-row .num{font-size:14px;width:100px}
+.report-tip{font-size:15px;line-height:1.7}
+.reward-card h2{font-size:25px}
+.reward-card p{font-size:16px;font-family:'Noto Sans KR';font-weight:500;line-height:1.6}
+footer{font-size:13px;color:rgba(255,255,255,.75)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(255,255,255,.5);padding:14px}
+</style>
+</head>
+<body>
+<div class="starfield" id="starfield"></div>
+
+<header>
+  <div class="logo">
+    <span class="rocket">🚀</span>
+    <div style="color:#fff">
+      <h1>소리 로켓 수리 대작전</h1>
+      <div class="sub">파닉스 Lv1 · 소리 행성에서 로켓 부품 6개를 모아라!</div>
+    </div>
+  </div>
+  <div class="star-bank">⭐ <span id="starBank">0</span></div>
+  <div class="star-bank" title="연속 출석">🔥 <span id="streakBank">1</span>일</div>
+  <button class="hbtn" onclick="goHome()">🗺️ 맵</button>
+  <button class="hbtn" onclick="openModal('settingsModal')">⚙️</button>
+</header>
+
+<main>
+
+<!-- ============ 홈 화면 ============ -->
+<section class="screen on" id="screenHome">
+  <div class="hero">
+    <div class="robot-stage" onclick="openModal('robotModal')" role="button" tabindex="0" title="로봇 꾸미기">
+      <span class="tf-tag" onclick="doTransform(event)">🔁 변신!</span>
+      <div id="robotSvgWrap"></div>
+      <span class="edit-tag">✨ 꾸미기</span>
+    </div>
+    <div class="hero-info">
+      <h2 id="heroTitle">태림이의 변신로봇이 소리 은하에 불시착했어요!</h2>
+      <p>여섯 개의 은하를 여행하며 소리를 모아 <b>집으로 돌아가는 길</b>을 찾아야 해요.<br>
+      은하마다 보물(부품·연료·지도·보석·열쇠·왕관)을 모으면 다음 은하가 열리고, <b>이야기 책</b>도 열려요!</p>
+      <div class="rocket-gauge" id="rocketGauge"></div>
+    </div>
+  </div>
+
+  <h3 class="map-title">🌌 은하 선택</h3>
+  <div class="galaxy-row" id="galaxyRow"></div>
+
+  <div class="constel" id="constel"></div>
+
+  <h3 class="map-title" id="mapTitle">🪐 소리 행성 지도</h3>
+  <div class="planet-track" id="planetTrack"></div>
+
+  <div class="bottom-nav">
+    <button class="nav-card" id="navStory" onclick="goStory()">
+      <span class="ico">📚</span>이야기 책장
+      <span class="nd" id="navStoryDesc">부품 2개를 모으면 첫 책이 열려요</span>
+    </button>
+    <button class="nav-card" onclick="goAI()">
+      <span class="ico">🤖</span>소리봇과 말하기
+      <span class="nd">AI 로봇 박사가 발음을 들어줘요</span>
+    </button>
+    <button class="nav-card" onclick="openReport()">
+      <span class="ico">📊</span>부모 리포트
+      <span class="nd">음소별 정답률과 약점 분석</span>
+    </button>
+  </div>
+
+  <div class="panel" style="margin-top:22px">
+    <h3 style="font-size:16px;margin-bottom:4px">📊 소리 숙달도</h3>
+    <div class="dash-grid" id="dashGrid"></div>
+  </div>
+</section>
+
+<!-- ============ 행성 미션 화면 ============ -->
+<section class="screen" id="screenPlanet">
+  <div class="panel">
+    <div class="mission-head">
+      <button class="back-btn" onclick="goHome()">← 맵으로</button>
+      <h2 id="planetTitle">🪐 s 행성</h2>
+      <div class="step-dots">
+        <div class="step-dot" id="stepDot0">🔊</div>
+        <div class="step-dot" id="stepDot1">🎈</div>
+        <div class="step-dot" id="stepDot2">✏️</div>
+        <div class="step-dot" id="stepDot3">👾</div>
+      </div>
+    </div>
+
+    <!-- STEP 0: 소리 만나기 (글자 ➜ 그림 페어) -->
+    <div class="mstep" id="mstep0">
+      <div class="meet">
+        <div class="meet-pair" id="meetPair"></div>
+        <div class="act" id="meetAction"></div>
+        <div class="btn-row"></div>
+      </div>
+    </div>
+
+    <!-- STEP 1: 사운드 풍선 -->
+    <div class="mstep" id="mstep1">
+      <div class="balloon-zone">
+        <div class="balloon-q">🔊 소리를 듣고 맞는 글자 풍선을 팡! 터뜨려요</div>
+        <div id="balloonHint" style="font-size:30px;margin:4px 0 2px;letter-spacing:6px"></div>
+        <button class="pill sun" style="font-size:14px;padding:9px 20px" onclick="balloonPlaySound()">🔊 다시 듣기</button>
+        <div class="balloon-row" id="balloonRow"></div>
+        <div class="game-score" id="balloonScore"></div>
+      </div>
+    </div>
+
+    <!-- STEP 2: 따라쓰기 -->
+    <div class="mstep" id="mstep2">
+      <div class="trace-zone">
+        <div class="balloon-q">✏️ 회색 글자를 손가락으로 따라 그려요!</div>
+        <div class="trace-wrap" id="traceWrap">
+          <canvas id="traceGuide" width="280" height="280"></canvas>
+          <canvas id="traceDraw" width="280" height="280"></canvas>
+        </div>
+        <div class="trace-meter"><i id="traceMeter"></i></div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="pill" onclick="traceClear()">🧽 지우기</button>
+          <button class="pill mint" id="traceDoneBtn" onclick="traceDone()" disabled>완성! ✔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: 보스 — 단어 조립 -->
+    <div class="mstep" id="mstep3">
+      <div class="balloon-q" style="text-align:center">👾 보스전! 단어 2개를 조립하면 로켓 부품을 얻어요</div>
+      <div class="quiz-head">
+        <div class="quiz-pic" id="quizPic">🪑</div>
+        <div>
+          <div class="quiz-ko" id="quizKo">앉았다</div>
+          <button class="pill sun" style="font-size:14px;padding:9px 20px;margin-top:6px" onclick="playQuizWord()">🔊 단어 듣기</button>
+        </div>
+      </div>
+      <div class="builder" id="builder"></div>
+      <div class="tile-tray" id="tileTray"></div>
+      <div class="quiz-feedback" id="quizFeedback"></div>
+      <div class="boss-progress" id="bossProgress"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ 이야기 책장 ============ -->
+<section class="screen" id="screenStory">
+  <div class="panel">
+    <div class="mission-head">
+      <button class="back-btn" onclick="goHome()">← 맵으로</button>
+      <h2>📚 이야기 책장</h2>
+    </div>
+    <div class="shelf" id="shelf"></div>
+    <div class="reader" id="reader">
+      <div class="scene" id="readerScene">🐶</div>
+      <div class="line" id="readerLine"></div>
+      <div class="ko-line" id="readerKo"></div>
+      <div class="page-nav">
+        <button class="pill" onclick="readerPrev()">← 이전</button>
+        <button class="pill sun" onclick="readerReadAll()">🔊 전체 읽기</button>
+        <button class="pill" onclick="readerNext()">다음 →</button>
+      </div>
+      <div class="game-score" id="readerPage"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AI 소리봇 ============ -->
+<section class="screen" id="screenAI">
+  <div class="panel">
+    <div class="mission-head">
+      <button class="back-btn" onclick="goHome()">← 맵으로</button>
+      <h2>🤖 소리봇 박사</h2>
+    </div>
+    <div class="rt-wrap">
+      <div class="rt-status" id="rtStatus">🤖 로켓 수리 박사 소리봇과 소리 연습을 해요</div>
+      <div class="rt-stars" id="rtStars"></div>
+      <div class="rt-card">
+        <div class="label">📣 따라 말해요!</div>
+        <div class="rt-current en" id="rtCurrent">준비됐어요! 🎤</div>
+        <div class="rt-korean" id="rtKorean"></div>
+        <div class="rt-dots" id="rtDots">○○○○○ (0/5)</div>
+      </div>
+      <button class="rt-btn" id="rtBtn" onclick="rtToggle()">🎤 소리봇 부르기</button>
+      <div class="rt-hint">소리봇이 태림이가 약한 소리를 골라서 가르쳐줘요. 5번 따라 말하면 보상!</div>
+      <audio id="rtBotAudio" autoplay></audio>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>소리 로켓 수리 대작전 Lv1 — 체계적 합성 파닉스 · 숙달: 80%×2세션 · 데이터는 이 브라우저에만 저장</footer>
+
+<!-- 설정 모달 -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('settingsModal')">✕</button>
+    <h3>⚙️ 설정</h3>
+    <label>OpenAI API 키 (AI 소리봇용)</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-...">
+    <div class="btn-row" style="margin-top:14px;justify-content:flex-start">
+      <button class="pill mint" onclick="saveKey()">💾 저장</button>
+      <button class="pill" style="background:#3D4E73" onclick="resetStats()">🗑 학습 데이터 초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- 로봇 꾸미기 모달 -->
+<div class="modal-bg" id="robotModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('robotModal')">✕</button>
+    <h3>✨ 내 로봇 꾸미기</h3>
+    <div style="text-align:center;margin-bottom:10px" id="robotPreview"></div>
+    <label>몸 색깔</label>
+    <div class="custom-row" id="colorRow"></div>
+    <label>눈 모양</label>
+    <div class="custom-row" id="eyeRow"></div>
+    <label>안테나</label>
+    <div class="custom-row" id="antRow"></div>
+    <label>장비</label>
+    <div class="custom-row" id="gearRow"></div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="pill sun" onclick="saveRobot()">완성! 🤖</button>
+    </div>
+  </div>
+</div>
+
+<!-- 부모 리포트 모달 -->
+<div class="modal-bg" id="reportModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('reportModal')">✕</button>
+    <h3>👨‍👩‍👧 부모 리포트</h3>
+    <div id="reportBody"></div>
+  </div>
+</div>
+
+<!-- 보상 팝업 -->
+<div class="reward-pop" id="rewardPop">
+  <div class="reward-card">
+    <div class="big" id="rewardEmoji">🏆</div>
+    <h2 id="rewardTitle">미션 클리어!</h2>
+    <p id="rewardDesc"></p>
+    <button class="pill sun" onclick="closeReward()">계속하기 🚀</button>
+  </div>
+</div>
+<div class="buddy" id="buddy">
+  <div id="buddySvg"></div>
+  <div class="buddy-bubble" id="buddyBubble"></div>
+</div>
+<div id="comboGlow"></div>
+<div id="comboBadge"></div>
+<div class="bonus-stage" id="bonusStage">
+  <div class="bonus-top">🎈 보너스 타임! <b id="bonusTarget"></b> 풍선만 팡팡!
+    <div class="bonus-timer"><i id="bonusTimer"></i></div>
+    <div id="bonusScore">+0 ⭐</div>
+  </div>
+</div>
+<div class="confetti-layer" id="confettiLayer"></div>
+
+
+<script>
+console.log('%cPHONICS BUILD v9 — 살아있는 글자·연기장면·버디·드래그·버블팝·콤보·별자리 (7종 풀세트)','color:#0a0;font-weight:bold;font-size:16px');
+
+/* ===== 터치 피드백: 효과음(WebAudio) + 진동 + 파티클 ===== */
+let _actx=null;
+function actx(){ if(!_actx){ try{_actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return _actx; }
+function tone(freq,dur,type,vol,when){
+  const ctx=actx(); if(!ctx) return;
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type=type||'sine'; o.frequency.value=freq;
+  g.gain.setValueAtTime(vol||0.12, ctx.currentTime+(when||0));
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+(when||0)+dur);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(ctx.currentTime+(when||0)); o.stop(ctx.currentTime+(when||0)+dur+0.05);
+}
+function sfx(kind){
+  try{
+    if(kind==='pop'){ tone(620,.08,'square',.1); tone(940,.1,'square',.08,.05); }
+    else if(kind==='ding'){ tone(880,.12,'sine',.12); tone(1320,.16,'sine',.1,.08); }
+    else if(kind==='buzz'){ tone(170,.16,'square',.08); }
+    else if(kind==='win'){ [523,659,784,1046].forEach((f,i)=>tone(f,.16,'sine',.12,i*.11)); }
+    else if(kind==='tap'){ tone(440,.05,'sine',.08); }
+    else if(kind==='vroom'){
+      const ctx=actx(); if(!ctx) return;
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(70,ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(240,ctx.currentTime+.55);
+      g.gain.setValueAtTime(.1,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.7);
+      o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.75);
+    }
+  }catch(e){}
+}
+function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+// 터치 지점 파티클 버스트
+function spawnBurst(x,y,emojis){
+  const set=emojis||['✨','⭐','💥'];
+  for(let i=0;i<7;i++){
+    const d=document.createElement('div');
+    d.className='burst';
+    d.textContent=set[Math.floor(Math.random()*set.length)];
+    d.style.left=(x-10)+'px'; d.style.top=(y-10)+'px';
+    document.body.appendChild(d);
+    const ang=Math.random()*Math.PI*2, dist=46+Math.random()*56;
+    d.animate([
+      {transform:'translate(0,0) scale(1)',opacity:1},
+      {transform:`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist}px) scale(.4)`,opacity:0}
+    ],{duration:560+Math.random()*240,easing:'cubic-bezier(.2,.8,.4,1)'});
+    setTimeout(()=>d.remove(),850);
+  }
+}
+function burstFromEl(el,emojis){
+  try{ const r=el.getBoundingClientRect(); spawnBurst(r.left+r.width/2,r.top+r.height/2,emojis); }catch(e){}
+}
+
+/* ===== ⑥ 콤보 도레미 ===== */
+let comboN=0;
+const COMBO_NOTES=[523,587,659,698,784,880,988,1047];
+function comboHit(){
+  comboN++;
+  tone(COMBO_NOTES[Math.min(comboN-1,COMBO_NOTES.length-1)],.15,'sine',.13);
+  updateComboUI();
+}
+function comboMiss(){ comboN=0; updateComboUI(); }
+function updateComboUI(){
+  const g=document.getElementById('comboGlow');
+  if(g){
+    const op=Math.min(comboN*0.1,.55);
+    g.style.boxShadow=comboN>=2?`inset 0 0 ${26+comboN*9}px rgba(255,180,0,${op})`:'none';
+  }
+  const b=document.getElementById('comboBadge');
+  if(b){
+    if(comboN>=3){ b.textContent='연속 x'+comboN+' 🔥'; b.classList.add('show'); }
+    else b.classList.remove('show');
+  }
+}
+
+/* ===== ③ 로봇 친구 동행 ===== */
+function showBuddy(on){
+  const b=document.getElementById('buddy');
+  if(!b) return;
+  b.classList.toggle('show',!!on);
+  if(on) document.getElementById('buddySvg').innerHTML=robotSvg(STATS.robot,52);
+}
+let buddyTimer=null;
+function buddyReact(type,msg){
+  const b=document.getElementById('buddy');
+  if(!b||!b.classList.contains('show')) return;
+  b.classList.remove('jump','sad');
+  void b.offsetWidth;
+  b.classList.add(type==='sad'?'sad':'jump');
+  if(msg){
+    const bb=document.getElementById('buddyBubble');
+    bb.textContent=msg; bb.classList.add('show');
+    clearTimeout(buddyTimer);
+    buddyTimer=setTimeout(()=>bb.classList.remove('show'),1100);
+  }
+  setTimeout(()=>b.classList.remove('jump','sad'),600);
+}
+function buddyTransform(){
+  // 행성 클리어 시 버디가 스포츠카로 변신!
+  const sv=document.getElementById('buddySvg');
+  if(!sv) return;
+  sfx('vroom');
+  sv.innerHTML=carSvg(STATS.robot,64);
+  setTimeout(()=>{ sv.innerHTML=robotSvg(STATS.robot,52); },2200);
+}
+
+/* ===== ② 단어 뜻 연기 장면 ===== */
+const WORD_ACT={sat:'sit',sit:'sit',nap:'sleep',bed:'sleep',jump:'jump',spin:'spin',stop:'stop',
+  moon:'float',bee:'float',boat:'float',kite:'float',see:'cheer',tree:'cheer',play:'jump',
+  truck:'stop',bus:'stop',van:'stop',run:'jump',frog:'jump'};
+function playScene(q){
+  const act=WORD_ACT[q.w]||'cheer';
+  const st=document.createElement('div');
+  st.className='scene-stage act-'+act;
+  st.innerHTML=`<div class="scene-inner">
+    <div class="scene-floor">
+      <span class="scene-zzz">💤</span>
+      <span class="scene-bot">${robotSvg(STATS.robot,76)}</span>
+      <span class="scene-obj">${q.emoji}</span>
+    </div>
+    <div class="scene-word">${q.w}</div>
+    <div class="scene-ko">${q.ko}</div>
+  </div>`;
+  document.body.appendChild(st);
+  setTimeout(()=>{ speakEn(q.w+'!',0.8); },1100);
+  setTimeout(()=>{ st.remove(); },2400);
+}
+
+/* ===== ⑤ 보너스 버블팝 ===== */
+let pendingBonus=null, bonusIv=null, bonusTimerIv=null, bonusScore=0;
+function startBubbleBonus(targets){
+  const stage=document.getElementById('bonusStage');
+  stage.classList.add('on');
+  document.getElementById('bonusTarget').textContent=targets.map(x=>x.replace('_','-')).join(' ');
+  bonusScore=0;
+  document.getElementById('bonusScore').textContent='+0 ⭐';
+  speakEn(targets.map(t=>G[t]?G[t].say:t).join('... '),0.7);
+  const pool=levelGraphemes(STATS.curLevel);
+  let elapsed=0;
+  const DUR=10000;
+  document.getElementById('bonusTimer').style.width='100%';
+  bonusTimerIv=setInterval(()=>{
+    elapsed+=250;
+    document.getElementById('bonusTimer').style.width=Math.max(0,100-elapsed/DUR*100)+'%';
+    if(elapsed>=DUR) endBubbleBonus(targets);
+  },250);
+  bonusIv=setInterval(()=>{
+    const isTarget=Math.random()<0.55;
+    const g=isTarget?targets[Math.floor(Math.random()*targets.length)]
+                    :pool[Math.floor(Math.random()*pool.length)];
+    const bub=document.createElement('button');
+    bub.className='bubble';
+    const sz=78+Math.random()*30;
+    bub.style.width=sz+'px'; bub.style.height=sz+'px';
+    bub.style.left=(6+Math.random()*78)+'%';
+    bub.style.fontSize=(g.length>1?sz*0.34:sz*0.5)+'px';
+    bub.style.background=G[g]?G[g].color:'#5d7';
+    bub.style.animationDuration=(3.2+Math.random()*2)+'s';
+    bub.textContent=g.replace('_','-');
+    bub.onpointerdown=()=>{
+      if(bub.dataset.done) return;
+      bub.dataset.done='1';
+      if(targets.includes(g)){
+        bub.classList.add('bpop');
+        sfx('pop'); buzz(25); comboHit();
+        burstFromEl(bub,[G[g]?G[g].emoji:'⭐','✨']);
+        bonusScore++;
+        document.getElementById('bonusScore').textContent='+'+bonusScore+' ⭐';
+        recordAttempt(g,true);
+        setTimeout(()=>bub.remove(),300);
+      }else{
+        bub.classList.add('bwrong');
+        sfx('buzz');
+        setTimeout(()=>{ bub.classList.remove('bwrong'); delete bub.dataset.done; },350);
+      }
+    };
+    stage.appendChild(bub);
+    setTimeout(()=>{ if(bub.parentNode) bub.remove(); },5600);
+  },560);
+}
+function endBubbleBonus(targets){
+  clearInterval(bonusIv); clearInterval(bonusTimerIv);
+  const stage=document.getElementById('bonusStage');
+  stage.querySelectorAll('.bubble').forEach(b=>b.remove());
+  stage.classList.remove('on');
+  if(bonusScore>0){
+    addStars(bonusScore);
+    showReward('🎈','보너스 끝!',`풍선 ${bonusScore}개 팡팡! 별 ${bonusScore}개 추가 획득!`);
+  }
+}
+
+/* ============================================================
+   그래핌 DB — 모든 레벨의 소리 단위 (글자/이중자음/모음팀/사이트워드)
+============================================================ */
+const G = {
+  // Lv1
+  s:{say:'sss',word:'sun',ko:'해',emoji:'☀️',color:'#FF6B6B',action:'뱀처럼 손을 구불구불~ "스스스!" 🐍'},
+  a:{say:'a',word:'apple',ko:'사과',emoji:'🍎',color:'#FFB400',action:'개미가 팔 위로! "애! 애!" 🐜'},
+  t:{say:'t',word:'tiger',ko:'호랑이',emoji:'🐯',color:'#28C7A0',action:'테니스 보듯 고개 좌우! "트! 트!" 🎾'},
+  p:{say:'p',word:'pig',ko:'돼지',emoji:'🐷',color:'#7C5CFF',action:'촛불을 후~ "프! 프!" 🕯️'},
+  i:{say:'i',word:'igloo',ko:'이글루',emoji:'🧊',color:'#FF8FB1',action:'생쥐처럼 코 찡긋! "이! 이!" 🐭'},
+  n:{say:'nnn',word:'nose',ko:'코',emoji:'👃',color:'#3FA7FF',action:'비행기 날개 펴고 "은은은~!" ✈️'},
+  // Lv2
+  c:{say:'k',word:'cat',ko:'고양이',emoji:'🐱',color:'#FFB400',action:'캐스터네츠 딱딱! "크! 크!" 🎶'},
+  k:{say:'k',word:'kid',ko:'아이',emoji:'🧒',color:'#28C7A0',action:'발차기 킥킥! "크! 크!" 🥋'},
+  e:{say:'e',word:'egg',ko:'달걀',emoji:'🥚',color:'#FF6B6B',action:'달걀 톡톡 깨기! "에! 에!" 🍳'},
+  h:{say:'h',word:'hat',ko:'모자',emoji:'🎩',color:'#7C5CFF',action:'달리고 나서 헥헥! "흐! 흐!" 🏃'},
+  r:{say:'rrr',word:'rat',ko:'쥐',emoji:'🐀',color:'#FF8FB1',action:'강아지처럼 르르르~ 🐶'},
+  m:{say:'mmm',word:'map',ko:'지도',emoji:'🗺️',color:'#3FA7FF',action:'맛있다~ "음~~~" 🍰'},
+  d:{say:'d',word:'dog',ko:'강아지',emoji:'🐶',color:'#FFB400',action:'북을 둥둥! "드! 드!" 🥁'},
+  g:{say:'g',word:'gum',ko:'껌',emoji:'🍬',color:'#28C7A0',action:'물 꿀꺽꿀꺽! "그! 그!" 💧'},
+  o:{say:'o',word:'ox',ko:'황소',emoji:'🐂',color:'#FF6B6B',action:'스위치 똑딱! "오! 오!" 💡'},
+  u:{say:'u',word:'up',ko:'위로',emoji:'⬆️',color:'#7C5CFF',action:'우산을 펴요! "어! 어!" ☂️'},
+  l:{say:'lll',word:'leg',ko:'다리',emoji:'🦵',color:'#FF8FB1',action:'막대사탕 낼름~ "을~" 🍭'},
+  f:{say:'fff',word:'fan',ko:'선풍기',emoji:'🪭',color:'#3FA7FF',action:'풍선 바람 fff~ 🎈'},
+  b:{say:'b',word:'bat',ko:'방망이',emoji:'🏏',color:'#FFB400',action:'방망이 휙휙! "브! 브!" ⚾'},
+  j:{say:'j',word:'jam',ko:'잼',emoji:'🍓',color:'#28C7A0',action:'젤리처럼 흔들흔들! "즤! 즤!" 🍮'},
+  z:{say:'zzz',word:'zip',ko:'지퍼',emoji:'🤐',color:'#FF6B6B',action:'꿀벌이 zzz~ 🐝'},
+  w:{say:'w',word:'web',ko:'거미줄',emoji:'🕸️',color:'#7C5CFF',action:'바람을 후후~ "워! 워!" 🌬️'},
+  v:{say:'vvv',word:'van',ko:'밴',emoji:'🚐',color:'#FF8FB1',action:'붕붕 운전 vvv~ 🚗'},
+  y:{say:'y',word:'yam',ko:'고구마',emoji:'🍠',color:'#3FA7FF',action:'요요가 위아래로! "여! 여!" 🪀'},
+  x:{say:'ks',word:'box',ko:'상자',emoji:'📦',color:'#FFB400',action:'엑스레이 찰칵! "크스!" 🩻'},
+  qu:{say:'kw',word:'quiz',ko:'퀴즈',emoji:'❓',color:'#28C7A0',action:'오리가 꽥꽥! "쿼! 쿼!" 🦆'},
+  // Lv3 digraphs + double
+  sh:{say:'shhh',word:'ship',ko:'배',emoji:'🚢',color:'#FF6B6B',action:'쉿~ 조용히! "쉬~~" 🤫'},
+  ch:{say:'ch',word:'chip',ko:'감자칩',emoji:'🍟',color:'#FFB400',action:'기차가 칙칙폭폭! "치! 치!" 🚂'},
+  th:{say:'th',word:'thin',ko:'얇은',emoji:'📏',color:'#28C7A0',action:'혀를 살짝 물고 "th~" 😛'},
+  ck:{say:'k',word:'duck',ko:'오리',emoji:'🦆',color:'#7C5CFF',action:'카메라 찰칵! "크!" 📸'},
+  ng:{say:'ng',word:'ring',ko:'반지',emoji:'💍',color:'#FF8FB1',action:'역도 들며 "응~!" 🏋️'},
+  ll:{say:'lll',word:'bell',ko:'종',emoji:'🔔',color:'#3FA7FF',action:'종이 딸랑딸랑~ "을~" 🛎️'},
+  ss:{say:'sss',word:'hiss',ko:'쉭쉭',emoji:'🐍',color:'#FF6B6B',action:'뱀 두 마리가 쉭쉭! 🐍🐍'},
+  ff:{say:'fff',word:'puff',ko:'후 불기',emoji:'💨',color:'#FFB400',action:'민들레 후~ 불기 fff! 🌬️'},
+  // Lv4 blends (두 소리를 빠르게 연결)
+  st:{say:'s t, st',word:'stop',ko:'멈춰',emoji:'🛑',color:'#FF6B6B',action:'손바닥 쫙! "스트옵!" ✋'},
+  sp:{say:'s p, sp',word:'spin',ko:'빙글',emoji:'🌀',color:'#FFB400',action:'팽이처럼 빙글빙글! 🪩'},
+  tr:{say:'t r, tr',word:'truck',ko:'트럭',emoji:'🚚',color:'#28C7A0',action:'트럭이 부릉부릉! "트르!" 🚛'},
+  fl:{say:'f l, fl',word:'flag',ko:'깃발',emoji:'🚩',color:'#7C5CFF',action:'깃발 펄럭펄럭! "플!" 🏳️'},
+  nd:{say:'n d, nd',word:'hand',ko:'손',emoji:'✋',color:'#FF8FB1',action:'손 흔들기! "은드!" 👋'},
+  mp:{say:'m p, mp',word:'jump',ko:'점프',emoji:'🦘',color:'#3FA7FF',action:'폴짝 점프! "음프!" 🤸'},
+  // Lv5 magic e
+  'a_e':{say:'a, ay',word:'cake',ko:'케이크',emoji:'🎂',color:'#FF6B6B',action:'마법 e가 a를 "에이!"로 바꿔요 🪄'},
+  'i_e':{say:'i, eye',word:'bike',ko:'자전거',emoji:'🚲',color:'#FFB400',action:'마법 e가 i를 "아이!"로 바꿔요 🪄'},
+  'o_e':{say:'o, oh',word:'home',ko:'집',emoji:'🏠',color:'#28C7A0',action:'마법 e가 o를 "오우!"로 바꿔요 🪄'},
+  'u_e':{say:'u, you',word:'cube',ko:'큐브',emoji:'🧊',color:'#7C5CFF',action:'마법 e가 u를 "유!"로 바꿔요 🪄'},
+  // Lv6 vowel teams + tricky
+  ee:{say:'ee',word:'tree',ko:'나무',emoji:'🌳',color:'#28C7A0',action:'eee~ 하고 활짝 웃어요! 😁'},
+  ai:{say:'ay',word:'rain',ko:'비',emoji:'🌧️',color:'#3FA7FF',action:'비가 에이~ 하고 내려요 ☔'},
+  ay:{say:'ay',word:'day',ko:'낮',emoji:'☀️',color:'#FFB400',action:'해님에게 에이~ 인사! 🌞'},
+  oa:{say:'oh',word:'boat',ko:'배',emoji:'⛵',color:'#FF6B6B',action:'배가 오~ 하고 떠가요 🌊'},
+  oo:{say:'oo',word:'moon',ko:'달',emoji:'🌙',color:'#7C5CFF',action:'유령처럼 우우~! 👻'},
+  the:{say:'the',word:'the',ko:'그(트리키)',emoji:'⭐',color:'#FF8FB1',action:'통째로 외우는 마법 단어! ✨'},
+  you:{say:'you',word:'you',ko:'너',emoji:'🫵',color:'#FFB400',action:'너! 하고 가리켜요 👉'},
+  is:{say:'is',word:'is',ko:'~이다',emoji:'🟰',color:'#28C7A0',action:'이즈~ 통째로! ✨'},
+  to:{say:'to',word:'to',ko:'~로',emoji:'➡️',color:'#3FA7FF',action:'투~ 화살표 따라! ✨'},
+  and:{say:'and',word:'and',ko:'그리고',emoji:'➕',color:'#7C5CFF',action:'앤드~ 둘을 더해요! ✨'},
+  I:{say:'I',word:'I',ko:'나',emoji:'🙋',color:'#FF6B6B',action:'아이! 하고 손 들기! ✋'}
+};
+
+/* ============================================================
+   6단계 레벨 커리큘럼
+============================================================ */
+const LEVELS = [
+  {n:1, name:'첫 소리 은하', icon:'🔩', collect:'로켓 부품', items:['🔩','⚙️','🛞','🔋','📡','🪟'],
+   planets:[
+     {g:['s'],name:'스네이크 행성'},{g:['a'],name:'사과 행성'},{g:['t'],name:'호랑이 행성'},
+     {g:['p'],name:'돼지 행성'},{g:['i'],name:'얼음 행성'},{g:['n'],name:'코 행성'}],
+   words:[
+     {w:'sat',ko:'앉았다',emoji:'🪑'},{w:'pin',ko:'핀',emoji:'📌'},{w:'tap',ko:'수도꼭지',emoji:'🚰'},
+     {w:'pat',ko:'토닥토닥',emoji:'🫳'},{w:'sit',ko:'앉다',emoji:'🧘'},{w:'tin',ko:'깡통',emoji:'🥫'},
+     {w:'nap',ko:'낮잠',emoji:'😴'},{w:'pit',ko:'구덩이',emoji:'🕳️'},{w:'tip',ko:'손끝',emoji:'☝️'},
+     {w:'pan',ko:'프라이팬',emoji:'🍳'},{w:'sip',ko:'홀짝',emoji:'🥤'},{w:'ant',ko:'개미',emoji:'🐜'},
+     {w:'nip',ko:'꼬집기',emoji:'🦀'},{w:'pip',ko:'씨앗',emoji:'🌱'}],
+   books:[
+     {title:'Pip!',cover:'🐶',need:2,pages:[
+       {scene:'🐶',words:['Pip','sat','.'],ko:'강아지 핍이 앉았어요.'},
+       {scene:'🐶🪑',words:['Sit',',','Pip',',','sit','!'],ko:'앉아, 핍, 앉아!'},
+       {scene:'🐶🫳',words:['Pat','Pip','.'],ko:'핍을 토닥토닥.'}]},
+     {title:'A Nap',cover:'😴',need:4,pages:[
+       {scene:'🐱',words:['Nat','sat','.'],ko:'고양이 냇이 앉았어요.'},
+       {scene:'🐱💤',words:['Nat','naps','.'],ko:'냇이 낮잠을 자요.'},
+       {scene:'🤫',words:['Sit','.','Nap','.'],ko:'앉아. 낮잠 자.'}]},
+     {title:'Tap, Tap!',cover:'🍳',need:6,pages:[
+       {scene:'🍳',words:['A','tin','pan','!'],ko:'깡통 프라이팬!'},
+       {scene:'👏🍳',words:['Tap','it','!'],ko:'두드려 봐!'},
+       {scene:'🐶🐱',words:['Pip','taps','.','Nat','taps','.'],ko:'핍이 두드려요. 냇도 두드려요.'}]}
+   ]},
+  {n:2, name:'알파벳 은하', icon:'⛽', collect:'연료', items:['⛽','⛽','⛽','⛽','⛽','⛽'],
+   planets:[
+     {g:['c','k','e'],name:'캐스터네츠 행성'},{g:['h','r','m','d'],name:'북소리 행성'},
+     {g:['g','o','u','l'],name:'막대사탕 행성'},{g:['f','b','j'],name:'풍선 행성'},
+     {g:['z','w','v'],name:'꿀벌 행성'},{g:['y','x','qu'],name:'오리 행성'}],
+   words:[
+     {w:'cat',ko:'고양이',emoji:'🐱'},{w:'dog',ko:'강아지',emoji:'🐶'},{w:'red',ko:'빨강',emoji:'🔴'},
+     {w:'bed',ko:'침대',emoji:'🛏️'},{w:'cup',ko:'컵',emoji:'☕'},{w:'sun',ko:'해',emoji:'☀️'},
+     {w:'hat',ko:'모자',emoji:'🎩'},{w:'hen',ko:'암탉',emoji:'🐔'},{w:'pen',ko:'펜',emoji:'🖊️'},
+     {w:'leg',ko:'다리',emoji:'🦵'},{w:'bus',ko:'버스',emoji:'🚌'},{w:'box',ko:'상자',emoji:'📦'},
+     {w:'fox',ko:'여우',emoji:'🦊'},{w:'jam',ko:'잼',emoji:'🍓'},{w:'van',ko:'밴',emoji:'🚐'},
+     {w:'zip',ko:'지퍼',emoji:'🤐'},{w:'kid',ko:'아이',emoji:'🧒'},{w:'log',ko:'통나무',emoji:'🪵'},
+     {w:'gum',ko:'껌',emoji:'🍬'},{w:'map',ko:'지도',emoji:'🗺️'},{w:'web',ko:'거미줄',emoji:'🕸️'},
+     {w:'yam',ko:'고구마',emoji:'🍠'}],
+   books:[
+     {title:'A Red Hen',cover:'🐔',need:3,pages:[
+       {scene:'🐔',words:['A','red','hen','.'],ko:'빨간 암탉.'},
+       {scene:'🐱📦',words:['A','cat','in','a','box','.'],ko:'상자 속 고양이.'},
+       {scene:'🐶💤',words:['The','dog','naps','.'],ko:'강아지가 낮잠 자요. (the는 통째로!)'}]}
+   ]},
+  {n:3, name:'쌍둥이 소리 은하', icon:'🗺️', collect:'별지도', items:['🗺️','🗺️','🗺️','🗺️','🗺️','🗺️'],
+   planets:[
+     {g:['sh'],name:'쉿! 행성'},{g:['ch'],name:'기차 행성'},{g:['th'],name:'혀 행성'},
+     {g:['ck'],name:'찰칵 행성'},{g:['ng'],name:'역도 행성'},{g:['ll','ss','ff'],name:'더블 행성'}],
+   words:[
+     {w:'ship',ko:'배',emoji:'🚢',t:['sh','i','p']},{w:'shop',ko:'가게',emoji:'🏪',t:['sh','o','p']},
+     {w:'fish',ko:'물고기',emoji:'🐟',t:['f','i','sh']},{w:'chip',ko:'감자칩',emoji:'🍟',t:['ch','i','p']},
+     {w:'chin',ko:'턱',emoji:'😊',t:['ch','i','n']},{w:'rich',ko:'부자',emoji:'💰',t:['r','i','ch']},
+     {w:'thin',ko:'얇은',emoji:'📏',t:['th','i','n']},{w:'bath',ko:'목욕',emoji:'🛁',t:['b','a','th']},
+     {w:'duck',ko:'오리',emoji:'🦆',t:['d','u','ck']},{w:'sock',ko:'양말',emoji:'🧦',t:['s','o','ck']},
+     {w:'rock',ko:'바위',emoji:'🪨',t:['r','o','ck']},{w:'ring',ko:'반지',emoji:'💍',t:['r','i','ng']},
+     {w:'king',ko:'왕',emoji:'👑',t:['k','i','ng']},{w:'song',ko:'노래',emoji:'🎵',t:['s','o','ng']},
+     {w:'bell',ko:'종',emoji:'🔔',t:['b','e','ll']},{w:'hiss',ko:'쉭쉭',emoji:'🐍',t:['h','i','ss']},
+     {w:'puff',ko:'후~',emoji:'💨',t:['p','u','ff']}],
+   books:[
+     {title:'The Fish',cover:'🐟',need:3,pages:[
+       {scene:'🐟🚢',words:['A','fish','in','a','ship','.'],ko:'배 안의 물고기.'},
+       {scene:'🦆💤',words:['Shh','!','The','duck','naps','.'],ko:'쉿! 오리가 낮잠 자요.'},
+       {scene:'🔔',words:['Ring','the','bell','!'],ko:'종을 울려요!'}]}
+   ]},
+  {n:4, name:'친구 소리 은하', icon:'💎', collect:'에너지 보석', items:['💎','💎','💎','💎','💎','💎'],
+   planets:[
+     {g:['st'],name:'멈춰 행성'},{g:['sp'],name:'빙글 행성'},{g:['tr'],name:'트럭 행성'},
+     {g:['fl'],name:'깃발 행성'},{g:['nd'],name:'손 행성'},{g:['mp'],name:'점프 행성'}],
+   words:[
+     {w:'stop',ko:'멈춰',emoji:'🛑'},{w:'step',ko:'걸음',emoji:'👣'},{w:'spin',ko:'빙글',emoji:'🌀'},
+     {w:'flag',ko:'깃발',emoji:'🚩'},{w:'frog',ko:'개구리',emoji:'🐸'},{w:'drum',ko:'북',emoji:'🥁'},
+     {w:'hand',ko:'손',emoji:'✋'},{w:'lamp',ko:'전등',emoji:'💡'},{w:'jump',ko:'점프',emoji:'🦘'},
+     {w:'nest',ko:'둥지',emoji:'🪺'},{w:'truck',ko:'트럭',emoji:'🚚',t:['t','r','u','ck']}],
+   books:[
+     {title:'Jump!',cover:'🦘',need:3,pages:[
+       {scene:'🛑🚚',words:['Stop','the','truck','!'],ko:'트럭을 멈춰!'},
+       {scene:'🐸',words:['The','frog','jumps','.'],ko:'개구리가 점프해요.'},
+       {scene:'💡🥁',words:['A','lamp','and','a','drum','.'],ko:'전등 하나와 북 하나.'}]}
+   ]},
+  {n:5, name:'마법 e 은하', icon:'🗝️', collect:'마법 열쇠', items:['🗝️','🗝️','🗝️','🗝️'],
+   planets:[
+     {g:['a_e'],name:'케이크 행성'},{g:['i_e'],name:'자전거 행성'},
+     {g:['o_e'],name:'집 행성'},{g:['u_e'],name:'큐브 행성'}],
+   words:[
+     {w:'cake',ko:'케이크',emoji:'🎂'},{w:'name',ko:'이름',emoji:'📛'},{w:'gate',ko:'문',emoji:'🚪'},
+     {w:'bike',ko:'자전거',emoji:'🚲'},{w:'kite',ko:'연',emoji:'🪁'},{w:'five',ko:'다섯',emoji:'5️⃣'},
+     {w:'home',ko:'집',emoji:'🏠'},{w:'bone',ko:'뼈다귀',emoji:'🦴'},{w:'nose',ko:'코',emoji:'👃'},
+     {w:'cube',ko:'큐브',emoji:'🧊'},{w:'mule',ko:'노새',emoji:'🐴'}],
+   books:[
+     {title:'The Cake',cover:'🎂',need:2,pages:[
+       {scene:'🎂',words:['Make','a','cake','!'],ko:'케이크를 만들자!'},
+       {scene:'🚲🏠',words:['Ride','a','bike','home','.'],ko:'자전거 타고 집으로.'},
+       {scene:'🪁🚪',words:['A','kite','at','the','gate','.'],ko:'문 앞의 연.'}]}
+   ]},
+  {n:6, name:'팀 소리 은하', icon:'👑', collect:'별의 왕관', items:['👑','👑','👑','👑','👑','👑'],
+   planets:[
+     {g:['ee'],name:'나무 행성'},{g:['ai'],name:'비 행성'},{g:['ay'],name:'낮 행성'},
+     {g:['oa'],name:'돛단배 행성'},{g:['oo'],name:'달 행성'},
+     {g:['the','you','I','is','to','and'],name:'⭐ 트리키 행성'}],
+   words:[
+     {w:'see',ko:'보다',emoji:'👀',t:['s','ee']},{w:'tree',ko:'나무',emoji:'🌳',t:['t','r','ee']},
+     {w:'bee',ko:'벌',emoji:'🐝',t:['b','ee']},{w:'rain',ko:'비',emoji:'🌧️',t:['r','ai','n']},
+     {w:'tail',ko:'꼬리',emoji:'🐒',t:['t','ai','l']},{w:'day',ko:'낮',emoji:'☀️',t:['d','ay']},
+     {w:'play',ko:'놀다',emoji:'🎮',t:['p','l','ay']},{w:'boat',ko:'배',emoji:'⛵',t:['b','oa','t']},
+     {w:'coat',ko:'코트',emoji:'🧥',t:['c','oa','t']},{w:'moon',ko:'달',emoji:'🌙',t:['m','oo','n']},
+     {w:'food',ko:'음식',emoji:'🍚',t:['f','oo','d']}],
+   books:[
+     {title:'A Day',cover:'🌞',need:3,pages:[
+       {scene:'🌳👀',words:['See','the','tree','.'],ko:'나무를 봐요.'},
+       {scene:'🌧️⛵',words:['Rain','on','the','boat','.'],ko:'배 위에 비가 와요.'},
+       {scene:'🎮☀️',words:['You','and','I','play','all','day','!'],ko:'너랑 나랑 하루 종일 놀아요!'}]}
+   ]}
+];
+
+/* ============================================================
+   통계/진행 (그래핌 키 기반, 레벨 진행)
+============================================================ */
+const STAT_KEY = 'phx_stats_v3';
+function loadStats(){
+  try{ const raw=localStorage.getItem(STAT_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return {phonemes:{}, stars:0, today:'', todayAtt:{}, todayCor:{},
+    cleared:[], curLevel:1, streak:0, lastPlay:'', robot:{color:'#FFB400',eye:'round',ant:'ball',gear:'wing'}};
+}
+let STATS = loadStats();
+function saveStats(){ try{ localStorage.setItem(STAT_KEY,JSON.stringify(STATS)); }catch(e){} }
+function phStat(k){
+  if(!STATS.phonemes[k]) STATS.phonemes[k]={att:0,cor:0,sessions:[],mastered:false};
+  return STATS.phonemes[k];
+}
+function rolloverSession(){
+  const today=new Date().toISOString().slice(0,10);
+  if(STATS.today && STATS.today!==today){
+    Object.keys(STATS.phonemes).forEach(k=>{
+      const att=(STATS.todayAtt&&STATS.todayAtt[k])||0, cor=(STATS.todayCor&&STATS.todayCor[k])||0;
+      if(att>=3){
+        const acc=Math.round(cor/att*100);
+        phStat(k).sessions.push({date:STATS.today,att,cor,acc});
+        const ss=phStat(k).sessions;
+        if(ss.length>=2 && ss.slice(-2).every(s=>s.acc>=80)) phStat(k).mastered=true;
+      }
+    });
+    STATS.todayAtt={}; STATS.todayCor={};
+  }
+  STATS.today=today;
+  if(!STATS.todayAtt)STATS.todayAtt={}; if(!STATS.todayCor)STATS.todayCor={};
+  saveStats();
+}
+rolloverSession();
+// 연속 출석 스트릭
+(function(){
+  const today=new Date().toISOString().slice(0,10);
+  if(STATS.lastPlay!==today){
+    const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+    STATS.streak = (STATS.lastPlay===y) ? (STATS.streak||0)+1 : 1;
+    STATS.lastPlay=today; saveStats();
+  }
+})();
+
+function recordAttempt(k, ok){
+  if(!G[k]) return;
+  const p=phStat(k);
+  p.att++; STATS.todayAtt[k]=(STATS.todayAtt[k]||0)+1;
+  if(ok){ p.cor++; STATS.todayCor[k]=(STATS.todayCor[k]||0)+1; }
+  saveStats(); renderDash();
+}
+function addStars(n){
+  STATS.stars+=n; saveStats();
+  document.getElementById('starBank').textContent=STATS.stars;
+  // +N 플로팅 연출
+  try{
+    const bank=document.querySelector('.star-bank');
+    const r=bank.getBoundingClientRect();
+    const f=document.createElement('div');
+    f.className='burst'; f.textContent='+'+n+'⭐';
+    f.style.left=(r.left+r.width/2-14)+'px'; f.style.top=(r.bottom+4)+'px';
+    f.style.fontSize='17px'; f.style.fontFamily='Jua'; f.style.color='#FFB400';
+    document.body.appendChild(f);
+    f.animate([{transform:'translateY(0)',opacity:1},{transform:'translateY(-36px)',opacity:0}],
+      {duration:900,easing:'ease-out'});
+    setTimeout(()=>f.remove(),950);
+  }catch(e){}
+}
+function phAccuracy(k){ const p=STATS.phonemes[k]; return (!p||!p.att)?null:Math.round(p.cor/p.att*100); }
+
+// 레벨/행성 헬퍼
+function LV(){ return LEVELS[STATS.curLevel-1]; }
+function planetId(lvN, idx){ return lvN+'-'+idx; }
+function clearedInLevel(lvN){
+  const lv=LEVELS[lvN-1];
+  return lv.planets.filter((_,i)=>STATS.cleared.includes(planetId(lvN,i))).length;
+}
+function levelDone(lvN){ return clearedInLevel(lvN) >= LEVELS[lvN-1].planets.length; }
+function levelUnlocked(lvN){ return lvN===1 || levelDone(lvN-1); }
+function levelGraphemes(lvN){
+  const set=new Set();
+  LEVELS[lvN-1].planets.forEach(p=>p.g.forEach(g=>set.add(g)));
+  return [...set];
+}
+// 누적 단어 풀 (이전 레벨 포함)
+function cumulativeWords(lvN){
+  let arr=[];
+  for(let i=0;i<lvN;i++) arr=arr.concat(LEVELS[i].words);
+  return arr;
+}
+function wordTiles(w){ return w.t || w.w.split(''); }
+function weakPhonemes(lvN){
+  return levelGraphemes(lvN||STATS.curLevel)
+    .map(k=>({k,acc:phAccuracy(k)??-1,m:!!(STATS.phonemes[k]&&STATS.phonemes[k].mastered)}))
+    .filter(o=>!o.m).sort((a,b)=>a.acc-b.acc).map(o=>o.k);
+}
+
+/* ===== TTS ===== */
+let enVoice=null;
+function pickVoice(){
+  const vs=speechSynthesis.getVoices();
+  enVoice=vs.find(v=>/en[-_]US/i.test(v.lang)&&/female|samantha|zira|aria/i.test(v.name))
+    ||vs.find(v=>/en[-_]US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
+}
+if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged=pickVoice; pickVoice(); }
+function speakEn(t,rate){
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t);
+    if(enVoice)u.voice=enVoice; u.lang='en-US'; u.rate=rate||0.78; u.pitch=1.1;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ============================================================
+   화면 & 홈 렌더 (은하 선택 + 행성 맵)
+============================================================ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function goHome(){ showBuddy(false); comboMiss(); renderHome(); showScreen('screenHome'); }
+function goStory(){ showBuddy(false); renderShelf(); showScreen('screenStory'); }
+function goAI(){ showBuddy(false); showScreen('screenAI'); }
+
+function selectLevel(n){
+  // 모든 은하 선택 가능 (첫 행성 맛보기). 진행 잠금은 행성 단위에서 처리.
+  sfx('tap');
+  STATS.curLevel=n; saveStats(); renderHome();
+}
+function renderHome(){
+  const lv=LV();
+  // 은하 바
+  document.getElementById('galaxyRow').innerHTML = LEVELS.map(L=>{
+    const unlocked=levelUnlocked(L.n), done=levelDone(L.n);
+    return `<button class="galaxy ${STATS.curLevel===L.n?'sel':''} ${unlocked?'':'taste'} ${done?'done':''}"
+      onclick="selectLevel(${L.n})">
+      <span class="gi">${L.icon}</span>
+      <span class="gn">Lv${L.n} ${L.name}</span>
+      <span class="gp">${unlocked?clearedInLevel(L.n)+'/'+L.planets.length:'🍬 맛보기'}</span>
+    </button>`;
+  }).join('');
+  // 게이지
+  const got=clearedInLevel(lv.n);
+  document.getElementById('rocketGauge').innerHTML =
+    `<span class="gauge-label">${lv.icon} ${lv.collect}: ${got} / ${lv.planets.length}${levelDone(lv.n)?' — Lv'+lv.n+' 완료! 🎆':''}</span>`+
+    lv.planets.map((_,i)=>`<div class="part-slot ${i<got?'got':''}">${i<got?lv.items[i%lv.items.length]:'?'}</div>`).join('');
+  // 맵 타이틀
+  document.getElementById('mapTitle').textContent=`🪐 Lv${lv.n} ${lv.name} — 행성 지도`;
+  // 행성
+  document.getElementById('planetTrack').innerHTML = lv.planets.map((p,i)=>{
+    const id=planetId(lv.n,i);
+    const cleared=STATS.cleared.includes(id);
+    // 맛보기 규칙: 모든 은하의 첫 행성(0번)은 항상 열림.
+    // 두 번째 행성부터는 [이전 은하 완주] + [이전 행성 클리어] 필요.
+    const locked = i>0 && (!levelUnlocked(lv.n) || !STATS.cleared.includes(planetId(lv.n,i-1)));
+    const main=G[p.g[0]];
+    const label=p.g.join(' ');
+    return `<button class="planet ${cleared?'cleared':''} ${locked?'locked':''}"
+      ${locked?'disabled':''} onclick="enterPlanet(${i})">
+      <span class="flag">🚩</span>
+      <div class="orb" style="background:${main.color};font-size:${label.length>3?'22px':label.length>1?'30px':'44px'}">${label}</div>
+      <div class="pname">${p.g.map(x=>G[x].emoji).join('')} ${p.name}</div>
+      <div class="pstate">${cleared?'클리어! '+lv.icon+' 획득':locked?(!levelUnlocked(lv.n)?'🔒 Lv'+(lv.n-1)+' 완주 후 계속':'🔒 이전 행성 먼저!'):(i===0&&!levelUnlocked(lv.n)?'🍬 맛보기 도전!':'미션 도전!')}</div>
+    </button>`;
+  }).join('');
+  // 책장 네비
+  const allBooks=LEVELS.flatMap(L=>L.books.map(b=>({...b,lv:L.n})));
+  const unlockedBooks=allBooks.filter(b=>clearedInLevel(b.lv)>=b.need).length;
+  document.getElementById('navStoryDesc').textContent =
+    unlockedBooks===0?'행성을 깨면 이야기 책이 열려요':`읽을 수 있는 책: ${unlockedBooks}권 / ${allBooks.length}권`;
+  document.getElementById('navStory').classList.toggle('lockd',unlockedBooks===0);
+  renderRobot(); renderDash();
+  const st=document.getElementById('streakBank'); if(st) st.textContent=STATS.streak||1;
+  // ⑦ 소리 별자리: 숙달한 소리가 별이 되어 빛남
+  const con=document.getElementById('constel');
+  if(con){
+    const mastered=Object.keys(STATS.phonemes).filter(k=>G[k]&&STATS.phonemes[k].mastered);
+    if(mastered.length===0){
+      con.innerHTML=`✨ 태림이의 소리 별자리 <span class="c-hint">— 소리를 숙달(🏅)하면 여기에 별이 떠올라요!</span>`;
+    }else{
+      con.innerHTML=`✨ 소리 별자리 (${mastered.length}개) `+
+        mastered.map((k,i)=>`${i>0?'<span class="c-dot">·</span>':''}<span class="c-star" title="${G[k].word}">${k.replace('_','-')}</span>`).join('');
+    }
+  }
+}
+
+/* ============================================================
+   로봇 커스터마이즈
+============================================================ */
+const ROBOT_COLORS=['#FFB400','#FF6B6B','#28C7A0','#7C5CFF','#3FA7FF','#FF8FB1','#19B8C4','#FF9E1B'];
+const EYE_TYPES={round:'⬤ 동글',star:'⭐ 별',happy:'😊 웃음',wink:'😉 윙크'};
+const ANT_TYPES={ball:'📍 방울',zig:'⚡ 번개',heart:'💗 하트'};
+const GEAR_TYPES={none:'🚫 없음',jet:'🚀 제트팩',cape:'🦸 망토',wing:'🚗 윙도어'};
+function shade(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt;
+  r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+  return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+function robotSvg(cfg,size){
+  const c=cfg.color, cl=shade(c,46), cd=shade(c,-40), cdd=shade(c,-70);
+  const gid='rg'+c.replace('#','');
+  const neon='#7DF9FF', metal='#9FB4D8', dark='#222B3F';
+  // 눈 (전투 바이저)
+  let eyes='';
+  if(cfg.eye==='round')
+    eyes=`<g class="robo-eye"><circle cx="58" cy="35" r="5" fill="${neon}"/><circle cx="82" cy="35" r="5" fill="${neon}"/>
+      <circle cx="59.5" cy="33.5" r="1.7" fill="#fff"/><circle cx="83.5" cy="33.5" r="1.7" fill="#fff"/></g>`;
+  else if(cfg.eye==='star')
+    eyes=`<g class="robo-eye"><text x="58" y="41" font-size="13" text-anchor="middle">⭐</text><text x="82" y="41" font-size="13" text-anchor="middle">⭐</text></g>`;
+  else if(cfg.eye==='happy')
+    eyes=`<g class="robo-eye"><path d="M52 37 q6 -7 12 0" stroke="${neon}" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+      <path d="M76 37 q6 -7 12 0" stroke="${neon}" stroke-width="3.6" fill="none" stroke-linecap="round"/></g>`;
+  else
+    eyes=`<g class="robo-eye"><circle cx="58" cy="35" r="5" fill="${neon}"/><circle cx="59.5" cy="33.5" r="1.7" fill="#fff"/>
+      <path d="M76 36 q6 -6 12 0" stroke="${neon}" stroke-width="3.6" fill="none" stroke-linecap="round"/></g>`;
+  let ant='';
+  if(cfg.ant==='ball')
+    ant=`<line x1="70" y1="12" x2="70" y2="4" stroke="#1C2B4A" stroke-width="3"/>
+      <circle cx="70" cy="3.5" r="4.5" fill="${cl}" stroke="#1C2B4A" stroke-width="2.5"><animate attributeName="r" values="4.5;5.5;4.5" dur="1.6s" repeatCount="indefinite"/></circle>`;
+  else if(cfg.ant==='zig') ant=`<text x="70" y="10" font-size="14" text-anchor="middle">⚡</text>`;
+  else ant=`<text x="70" y="9" font-size="12" text-anchor="middle">💗</text>`;
+  let gearBack='', gearFx='';
+  if(cfg.gear==='jet'){
+    gearBack=`<rect x="10" y="64" width="13" height="32" rx="6" fill="${cdd}" stroke="#1C2B4A" stroke-width="3"/>
+      <rect x="117" y="64" width="13" height="32" rx="6" fill="${cdd}" stroke="#1C2B4A" stroke-width="3"/>`;
+    gearFx=`<g class="robo-flame"><path d="M13 97 q3 9 3 13 q4 -5 5 -13z" fill="#FF9E1B"/><path d="M120 97 q3 9 3 13 q4 -5 5 -13z" fill="#FF9E1B"/></g>`;
+  } else if(cfg.gear==='cape'){
+    gearBack=`<path d="M28 56 Q16 116 22 144 L60 126 Q38 94 38 58 Z" fill="#E0483E" stroke="#1C2B4A" stroke-width="3" opacity=".95">
+      <animateTransform attributeName="transform" type="skewX" values="0;-3;0;2;0" dur="3s" repeatCount="indefinite"/></path>`;
+  } else if(cfg.gear==='wing'){
+    gearBack=`<path d="M26 56 L2 40 L8 82 L28 84 Z" fill="url(#${gid})" stroke="#1C2B4A" stroke-width="3"/>
+      <path d="M114 56 L138 40 L132 82 L112 84 Z" fill="url(#${gid})" stroke="#1C2B4A" stroke-width="3"/>
+      <path d="M8 50 L22 56 L21 64 L9 60 Z" fill="#AEE3FF" stroke="#1C2B4A" stroke-width="2"/>
+      <path d="M132 50 L118 56 L119 64 L131 60 Z" fill="#AEE3FF" stroke="#1C2B4A" stroke-width="2"/>`;
+  }
+  return `<svg viewBox="0 0 140 170" width="${size}" height="${Math.round(size*170/140)}">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${cl}"/><stop offset="1" stop-color="${c}"/></linearGradient></defs>
+    <ellipse cx="70" cy="163" rx="42" ry="6" fill="rgba(0,0,0,.28)"/>
+    ${gearBack}
+    ${ant}
+    <!-- 전투 헬멧: V 크레스트 + 송곳 핀 -->
+    <path d="M70 8 L78 22 L62 22 Z" fill="${cdd}" stroke="#1C2B4A" stroke-width="2.5"/>
+    <path d="M44 18 L96 18 L100 36 L94 50 L46 50 L40 36 Z" fill="url(#${gid})" stroke="#1C2B4A" stroke-width="3.5"/>
+    <path d="M40 26 L24 18 L30 44 L42 44 Z" fill="${cdd}" stroke="#1C2B4A" stroke-width="2.5"/>
+    <path d="M100 26 L116 18 L110 44 L98 44 Z" fill="${cdd}" stroke="#1C2B4A" stroke-width="2.5"/>
+    <path d="M48 26 L92 26 L94 41 L46 41 Z" fill="#16233F"/>
+    ${eyes}
+    <path d="M58 44 L82 44 L79 50 L61 50 Z" fill="${metal}" stroke="#1C2B4A" stroke-width="2"/>
+    <!-- 어깨 장갑(아머) + 바퀴 -->
+    <path d="M14 56 L46 60 L44 86 L18 88 Z" fill="url(#${gid})" stroke="#1C2B4A" stroke-width="3.5"/>
+    <path d="M126 56 L94 60 L96 86 L122 88 Z" fill="url(#${gid})" stroke="#1C2B4A" stroke-width="3.5"/>
+    <path d="M16 58 L44 62 L43 70 L17 67 Z" fill="${cl}" opacity=".6"/>
+    <path d="M124 58 L96 62 L97 70 L123 67 Z" fill="${cl}" opacity=".6"/>
+    <g><circle cx="29" cy="73" r="11" fill="${dark}" stroke="#1C2B4A" stroke-width="3"/>
+      <circle cx="29" cy="73" r="5" fill="${metal}" stroke="#1C2B4A" stroke-width="2"/></g>
+    <g><circle cx="111" cy="73" r="11" fill="${dark}" stroke="#1C2B4A" stroke-width="3"/>
+      <circle cx="111" cy="73" r="5" fill="${metal}" stroke="#1C2B4A" stroke-width="2"/></g>
+    <!-- 가슴: 장갑 앞유리 + 아크 코어 -->
+    <path d="M40 54 L100 54 L104 92 L96 106 L44 106 L36 92 Z" fill="url(#${gid})" stroke="#1C2B4A" stroke-width="4"/>
+    <path d="M46 60 L67 60 L65 76 L48 76 Z" fill="#AEE3FF" stroke="#1C2B4A" stroke-width="2.4"/>
+    <path d="M73 60 L94 60 L92 76 L75 76 Z" fill="#AEE3FF" stroke="#1C2B4A" stroke-width="2.4"/>
+    <path d="M48 62 L62 62 L61 68 L49 68 Z" fill="#E8F7FF" opacity=".75"/>
+    <circle class="robo-core" cx="70" cy="90" r="9" fill="#FFF6DC" stroke="#1C2B4A" stroke-width="3"/>
+    <circle class="robo-core" cx="70" cy="90" r="13" fill="none" stroke="${neon}" stroke-width="2" opacity=".6"/>
+    <text x="70" y="94" font-size="9" text-anchor="middle" font-family="Baloo 2" font-weight="800" fill="#1C2B4A">L${STATS.curLevel}</text>
+    <circle class="robo-core" cx="48" cy="98" r="3.6" fill="#FFE08A" stroke="#1C2B4A" stroke-width="2"/>
+    <circle class="robo-core" cx="92" cy="98" r="3.6" fill="#FFE08A" stroke="#1C2B4A" stroke-width="2"/>
+    <!-- 파워 건틀릿 팔 -->
+    <path d="M16 90 L32 90 L34 114 L14 114 Z" fill="${cd}" stroke="#1C2B4A" stroke-width="3"/>
+    <path d="M124 90 L108 90 L106 114 L126 114 Z" fill="${cd}" stroke="#1C2B4A" stroke-width="3"/>
+    <circle cx="24" cy="121" r="7.5" fill="${cdd}" stroke="#1C2B4A" stroke-width="3"/>
+    <circle cx="116" cy="121" r="7.5" fill="${cdd}" stroke="#1C2B4A" stroke-width="3"/>
+    <line x1="20" y1="96" x2="30" y2="96" stroke="${neon}" stroke-width="2" opacity=".7"/>
+    <line x1="110" y1="96" x2="120" y2="96" stroke="${neon}" stroke-width="2" opacity=".7"/>
+    <!-- 허리 + 레벨 코어 -->
+    <path d="M50 106 L90 106 L86 118 L54 118 Z" fill="${cdd}" stroke="#1C2B4A" stroke-width="3"/>
+    <!-- 장갑 다리: 무릎 패드 + 정강이 바퀴 -->
+    <path d="M44 118 L66 118 L64 148 L44 148 Z" fill="url(#${gid})" stroke="#1C2B4A" stroke-width="3.5"/>
+    <path d="M96 118 L74 118 L76 148 L96 148 Z" fill="url(#${gid})" stroke="#1C2B4A" stroke-width="3.5"/>
+    <path d="M46 120 L64 120 L63 128 L47 128 Z" fill="${cl}" opacity=".65"/>
+    <path d="M76 120 L94 120 L93 128 L77 128 Z" fill="${cl}" opacity=".65"/>
+    <circle cx="41" cy="138" r="7.5" fill="${dark}" stroke="#1C2B4A" stroke-width="2.5"/><circle cx="41" cy="138" r="3" fill="${metal}"/>
+    <circle cx="99" cy="138" r="7.5" fill="${dark}" stroke="#1C2B4A" stroke-width="2.5"/><circle cx="99" cy="138" r="3" fill="${metal}"/>
+    <!-- 전투 부츠 -->
+    <path d="M38 148 L66 148 L70 158 L36 158 Z" fill="#1C2B4A"/>
+    <path d="M102 148 L74 148 L70 158 L104 158 Z" fill="#1C2B4A"/>
+    ${gearFx}
+  </svg>`;
+}
+// 🏎️ 변신 후 스포츠카 모드
+function carSvg(cfg,size){
+  const c=cfg.color, cl=shade(c,46), cd=shade(c,-40), cdd=shade(c,-70);
+  const gid='cg'+c.replace('#','');
+  const glass='#9ADBFF', neon='#7DF9FF';
+  return `<svg viewBox="0 0 180 100" width="${size}" height="${Math.round(size*100/180)}">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${cl}"/><stop offset="1" stop-color="${c}"/></linearGradient></defs>
+    <ellipse cx="90" cy="91" rx="70" ry="5" fill="rgba(0,0,0,.28)"/>
+    <!-- 리어 스포일러 -->
+    <path d="M14 38 L40 42 L40 48 L16 46 Z" fill="${cdd}" stroke="#1C2B4A" stroke-width="2.5"/>
+    <rect x="22" y="44" width="5" height="12" rx="2" fill="${cdd}" stroke="#1C2B4A" stroke-width="2"/>
+    <!-- 낮고 길쭉한 웨지 차체 -->
+    <path d="M10 70 L14 56 Q18 50 32 49 L52 36 Q58 30 72 29 L104 29 Q116 30 126 38 L146 50 Q166 54 172 62 L174 72 Q174 79 164 79 L20 79 Q10 79 10 70 Z"
+      fill="url(#${gid})" stroke="#1C2B4A" stroke-width="3.6"/>
+    <!-- 캐빈 유리 (날렵하게) -->
+    <path d="M60 34 L70 34 L69 49 L48 49 Z" fill="${glass}" stroke="#1C2B4A" stroke-width="2.2"/>
+    <path d="M76 34 L102 34 L114 49 L74 49 Z" fill="${glass}" stroke="#1C2B4A" stroke-width="2.2"/>
+    <path d="M62 36 L72 36 L71 42 L58 42 Z" fill="#E8F7FF" opacity=".8"/>
+    <!-- 사이드 스커트 + 레이싱 스트라이프 -->
+    <path d="M16 62 L168 60 L169 67 L15 69 Z" fill="${cdd}" opacity=".75"/>
+    <path d="M50 30 L58 30 L42 79 L34 79 Z" fill="#fff" opacity=".55"/>
+    <path d="M62 29 L68 29 L52 79 L46 79 Z" fill="#fff" opacity=".35"/>
+    <!-- 공기 흡입구 -->
+    <path d="M120 56 L138 54 L139 62 L121 63 Z" fill="${cdd}" stroke="#1C2B4A" stroke-width="2"/>
+    <!-- 날카로운 헤드라이트 / 테일램프 -->
+    <path d="M160 56 L172 60 L171 66 L158 64 Z" fill="#FFE08A" stroke="#1C2B4A" stroke-width="2" class="robo-core"/>
+    <path d="M11 60 L20 58 L20 68 L11 68 Z" fill="#FF5252" stroke="#1C2B4A" stroke-width="2"/>
+    <!-- 디퓨저 -->
+    <path d="M14 79 L36 79 L34 85 L16 85 Z" fill="#1C2B4A"/>
+    <path d="M144 79 L166 79 L164 85 L146 85 Z" fill="#1C2B4A"/>
+    <!-- 바퀴 (큰 뒷바퀴) -->
+    <g><circle cx="46" cy="78" r="16" fill="#222B3F" stroke="#1C2B4A" stroke-width="3.5"/>
+      <circle cx="46" cy="78" r="8" fill="#9FB4D8" stroke="#1C2B4A" stroke-width="2.5"/>
+      <path d="M46 71 L46 85 M39 78 L53 78" stroke="#222B3F" stroke-width="2.4"/>
+      <animateTransform attributeName="transform" type="rotate" from="0 46 78" to="360 46 78" dur="0.8s" repeatCount="indefinite"/></g>
+    <g><circle cx="132" cy="78" r="14" fill="#222B3F" stroke="#1C2B4A" stroke-width="3.5"/>
+      <circle cx="132" cy="78" r="7" fill="#9FB4D8" stroke="#1C2B4A" stroke-width="2.5"/>
+      <path d="M132 72 L132 84 M126 78 L138 78" stroke="#222B3F" stroke-width="2.2"/>
+      <animateTransform attributeName="transform" type="rotate" from="0 132 78" to="360 132 78" dur="0.8s" repeatCount="indefinite"/></g>
+    <!-- 네온 언더글로우 + 스피드 라인 -->
+    <line x1="58" y1="87" x2="122" y2="87" stroke="${neon}" stroke-width="3" stroke-linecap="round" opacity=".65" class="robo-core"/>
+    <g opacity=".75">
+      <line x1="0" y1="42" x2="16" y2="42" stroke="${neon}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="-4" y1="56" x2="13" y2="56" stroke="${neon}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="2" y1="70" x2="12" y2="70" stroke="${neon}" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <text x="92" y="72" font-size="9" text-anchor="middle" font-family="Baloo 2" font-weight="800" fill="#1C2B4A">L${STATS.curLevel}</text>
+  </svg>`;
+}
+// 🔁 변신 애니메이션 (홈 로봇 탭)
+let _transforming=false;
+function doTransform(ev){
+  if(ev) ev.stopPropagation();
+  if(_transforming) return;
+  _transforming=true;
+  const wrap=document.getElementById('robotSvgWrap');
+  sfx('win'); buzz([50,30,50,30,90]);
+  burstFromEl(wrap,['⚙️','✨','💫']);
+  wrap.classList.add('flipping');
+  setTimeout(()=>{ wrap.innerHTML=carSvg(STATS.robot,126); sfx('vroom'); },240);
+  setTimeout(()=>{ wrap.classList.remove('flipping'); wrap.classList.add('driving'); },500);
+  // 2.4초 후 다시 로봇으로
+  setTimeout(()=>{
+    sfx('pop');
+    wrap.classList.remove('driving');
+    wrap.classList.add('flipping');
+    setTimeout(()=>{ wrap.innerHTML=robotSvg(STATS.robot,100); },240);
+    setTimeout(()=>{ wrap.classList.remove('flipping'); _transforming=false; },500);
+  },2600);
+}
+function renderRobot(){ document.getElementById('robotSvgWrap').innerHTML=robotSvg(STATS.robot,100); }
+function renderRobotModal(){
+  document.getElementById('robotPreview').innerHTML=robotSvg(STATS.robot,110);
+  document.getElementById('colorRow').innerHTML=ROBOT_COLORS.map(c=>
+    `<div class="swatch ${STATS.robot.color===c?'sel':''}" style="background:${c}" onclick="setRobot('color','${c}')"></div>`).join('');
+  document.getElementById('eyeRow').innerHTML=Object.entries(EYE_TYPES).map(([k,v])=>
+    `<button class="opt-btn ${STATS.robot.eye===k?'sel':''}" onclick="setRobot('eye','${k}')">${v}</button>`).join('');
+  document.getElementById('antRow').innerHTML=Object.entries(ANT_TYPES).map(([k,v])=>
+    `<button class="opt-btn ${STATS.robot.ant===k?'sel':''}" onclick="setRobot('ant','${k}')">${v}</button>`).join('');
+  document.getElementById('gearRow').innerHTML=Object.entries(GEAR_TYPES).map(([k,v])=>
+    `<button class="opt-btn ${(STATS.robot.gear||'none')===k?'sel':''}" onclick="setRobot('gear','${k}')">${v}</button>`).join('');
+}
+function setRobot(k,v){ STATS.robot[k]=v; saveStats(); renderRobotModal(); renderRobot(); }
+function saveRobot(){ closeModal('robotModal'); renderRobot(); confetti(); }
+
+/* ============================================================
+   행성 미션 — 소리 만나기(여러 그래핌 캐러셀) → 풍선 → 따라쓰기 → 보스
+============================================================ */
+let curPlanetIdx=0, curStep=0, curG=null, meetIdx=0, traceQueue=[], traceTarget=null;
+function planetG(){ return LV().planets[curPlanetIdx].g; }
+function enterPlanet(idx){
+  sfx('ding'); buzz(25);
+  showBuddy(true);
+  curPlanetIdx=idx; curStep=0; meetIdx=0;
+  const p=LV().planets[idx];
+  curG=p.g[0];
+  document.getElementById('planetTitle').innerHTML=
+    `${G[curG].emoji} ${p.name} <span style="font-family:'Baloo 2';font-weight:800;font-size:14px;background:#FFF6DC;border-radius:999px;padding:3px 12px;margin-left:6px;color:#B07900">${p.g.map(x=>x.replace('_','-')).join(' · ')}</span>`;
+  renderMeet();
+  gotoStep(0);
+  showScreen('screenPlanet');
+  setTimeout(meetPlay,400);
+}
+function renderMeet(){
+  const gs=planetG();
+  curG=gs[meetIdx];
+  const g=G[curG];
+  const disp=curG.replace('_','-');
+  // ★ 글자 ➜ 그림 페어 카드: c ➜ 🐱 cat 고양이
+  document.getElementById('meetPair').innerHTML=`
+    <button class="mp-letter" style="background:${g.color};font-size:${disp.length>2?'46px':disp.length>1?'62px':'82px'}"
+      onclick="meetPlay()" title="소리 듣기">${disp}</button>
+    <div class="mp-arrow">➜</div>
+    <button class="mp-word" onclick="meetWord()" title="단어 듣기">
+      <span class="mp-emoji">${g.emoji}</span>
+      <span class="mp-en">${g.word}</span>
+      <span class="mp-ko">${g.ko}</span>
+    </button>`;
+  document.getElementById('meetAction').textContent=g.action;
+  const more = meetIdx < gs.length-1;
+  const row=document.querySelector('#mstep0 .btn-row');
+  row.innerHTML=`
+    <button class="pill sun" onclick="meetPlay()">🔊 소리 듣기</button>
+    <button class="pill mint" onclick="meetWord()">📣 단어로 듣기</button>
+    ${more?`<button class="pill" onclick="meetNext()">다음 소리 → (${meetIdx+1}/${gs.length})</button>`
+          :`<button class="pill" onclick="gotoStep(1)">게임 시작 → 🎈</button>`}`;
+}
+function meetNext(){ meetIdx++; renderMeet(); setTimeout(meetPlay,250); }
+function gotoStep(n){
+  curStep=n;
+  for(let i=0;i<4;i++){
+    document.getElementById('mstep'+i).classList.toggle('on',i===n);
+    const d=document.getElementById('stepDot'+i);
+    d.classList.toggle('cur',i===n); d.classList.toggle('ok',i<n);
+  }
+  if(n===1) balloonStart();
+  if(n===2) traceStartQueue();
+  if(n===3) bossStart();
+}
+function meetPlay(){ const g=G[curG]; speakEn(g.say+', '+g.say+', '+g.say,0.7); }
+function meetWord(){ const g=G[curG]; speakEn(g.say+'... '+g.word+'! '+g.word+'!',0.75); }
+
+/* ----- 풍선 (5문제, 행성 그래핌 + 레벨 약점 적응) ----- */
+let balN=0,balCorrect=0,balAnswer=null,balBusy=false;
+function balloonStart(){ balN=0; balCorrect=0; balloonNext(); }
+function balloonNext(){
+  if(balN>=5){
+    document.getElementById('balloonScore').textContent=`풍선 게임 끝! ${balCorrect}/5 팡!`;
+    addStars(balCorrect>=4?2:1);
+    setTimeout(()=>gotoStep(2),900);
+    return;
+  }
+  balBusy=false;
+  const gs=planetG();
+  const weak=weakPhonemes().filter(k=>!gs.includes(k));
+  balAnswer=(Math.random()<0.7||!weak.length)?gs[Math.floor(Math.random()*gs.length)]:weak[0];
+  const pool=levelGraphemes(STATS.curLevel).filter(k=>k!==balAnswer);
+  const others=pool.sort(()=>Math.random()-.5).slice(0,2);
+  const opts=[balAnswer,...others].sort(()=>Math.random()-.5);
+  document.getElementById('balloonRow').innerHTML=opts.map(k=>
+    `<button class="balloon" style="background:${G[k].color};font-size:${k.length>2?'24px':k.length>1?'34px':'50px'}"
+      onclick="balloonTap(this,'${k}')">${k.replace('_','-')}</button>`).join('');
+  document.getElementById('balloonScore').textContent=`문제 ${balN+1} / 5`;
+  setTimeout(balloonPlaySound,350);
+}
+function balloonPlaySound(){
+  if(!balAnswer)return;
+  const g=G[balAnswer];
+  speakEn(g.say+'! '+g.say+'! '+g.word+'!',0.72);
+}
+function balloonTap(el,k){
+  if(balBusy)return;
+  if(k===balAnswer){
+    balBusy=true; el.classList.add('pop');
+    sfx('pop'); comboHit(); buzz(30); burstFromEl(el,[G[k].emoji,G[k].emoji,'💥','✨']);
+    buddyReact('jump','Yes!');
+    const bh=document.getElementById('balloonHint');
+    if(bh){ bh.textContent=G[k].emoji+' '+G[k].word+'!'; setTimeout(()=>{bh.textContent='';},900); }
+    recordAttempt(balAnswer,true);
+    balCorrect++; balN++;
+    speakEn('Yes! '+G[k].say+'!',0.85);
+    setTimeout(balloonNext,650);
+  }else{
+    el.classList.add('shake');
+    setTimeout(()=>el.classList.remove('shake'),350);
+    sfx('buzz'); buzz([40,40,40]); comboMiss();
+    buddyReact('sad','한 번 더!');
+    recordAttempt(balAnswer,false);
+    speakEn(G[balAnswer].say,0.65);
+  }
+}
+
+/* ----- 따라쓰기 (행성 그래핌 최대 2개 순회) ----- */
+let traceCtx=null,traceMask=null,traceDrawing=false,traceCovered=0;
+function traceStartQueue(){
+  const gs=planetG();
+  traceQueue=gs.slice(0,2);
+  traceTarget=traceQueue.shift();
+  traceStart();
+}
+function traceStart(){
+  const guide=document.getElementById('traceGuide');
+  const draw=document.getElementById('traceDraw');
+  const g=guide.getContext('2d');
+  traceCtx=draw.getContext('2d');
+  g.clearRect(0,0,280,280); traceCtx.clearRect(0,0,280,280);
+  const disp=traceTarget.replace('_','-');
+  const fsize = disp.length>2?110:disp.length>1?150:200;
+  g.font='800 '+fsize+'px "Baloo 2", sans-serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  g.fillStyle='#D9E6F7'; g.fillText(disp,140,150);
+  g.strokeStyle=G[traceTarget].color; g.lineWidth=3; g.strokeText(disp,140,150);
+  const off=document.createElement('canvas'); off.width=280; off.height=280;
+  const m=off.getContext('2d');
+  m.font='800 '+fsize+'px "Baloo 2", sans-serif';
+  m.textAlign='center'; m.textBaseline='middle';
+  m.fillStyle='#000'; m.fillText(disp,140,150);
+  traceMask=m.getImageData(0,0,280,280).data;
+  traceCovered=0;
+  document.getElementById('traceMeter').style.width='0%';
+  document.getElementById('traceDoneBtn').disabled=true;
+  document.querySelector('#mstep2 .balloon-q').textContent=
+    `✏️ "${disp}" 글자를 손가락으로 따라 그려요!`+(traceQueue.length?` (다음: ${traceQueue.map(x=>x.replace('_','-')).join(', ')})`:'');
+  const wrap=document.getElementById('traceWrap');
+  if(!wrap.dataset.bound){
+    wrap.dataset.bound='1';
+    const draw2=document.getElementById('traceDraw');
+    const pos=e=>{
+      const r=draw2.getBoundingClientRect();
+      const t=e.touches?e.touches[0]:e;
+      return {x:(t.clientX-r.left)*280/r.width,y:(t.clientY-r.top)*280/r.height};
+    };
+    const start=e=>{e.preventDefault();traceDrawing=true;const p=pos(e);traceCtx.beginPath();traceCtx.moveTo(p.x,p.y);};
+    const move=e=>{
+      if(!traceDrawing)return;e.preventDefault();
+      const p=pos(e);
+      traceCtx.lineTo(p.x,p.y);
+      traceCtx.strokeStyle=G[traceTarget].color;
+      traceCtx.lineWidth=18;traceCtx.lineCap='round';traceCtx.lineJoin='round';
+      traceCtx.stroke();
+    };
+    const end=()=>{if(!traceDrawing)return;traceDrawing=false;traceCheck();};
+    wrap.addEventListener('mousedown',start);wrap.addEventListener('mousemove',move);
+    window.addEventListener('mouseup',end);
+    wrap.addEventListener('touchstart',start,{passive:false});
+    wrap.addEventListener('touchmove',move,{passive:false});
+    wrap.addEventListener('touchend',end);
+  }
+}
+function traceCheck(){
+  const d=traceCtx.getImageData(0,0,280,280).data;
+  let maskPx=0,hit=0;
+  for(let i=3;i<traceMask.length;i+=16){
+    if(traceMask[i]>40){maskPx++;if(d[i]>40)hit++;}
+  }
+  traceCovered=maskPx?Math.round(hit/maskPx*100):0;
+  document.getElementById('traceMeter').style.width=Math.min(traceCovered/0.45,100)+'%';
+  if(traceCovered>=45) document.getElementById('traceDoneBtn').disabled=false;
+}
+function traceClear(){
+  traceCtx.clearRect(0,0,280,280); traceCovered=0;
+  document.getElementById('traceMeter').style.width='0%';
+  document.getElementById('traceDoneBtn').disabled=true;
+}
+function traceDone(){
+  sfx('ding'); buzz(40); comboHit();
+  buddyReact('jump','멋진 글씨!');
+  const btn=document.getElementById('traceDoneBtn'); if(btn) burstFromEl(btn,['✏️','✨','⭐']);
+  recordAttempt(traceTarget,true);
+  addStars(1);
+  speakEn(G[traceTarget].say+'! Good job!',0.85);
+  if(traceQueue.length){ traceTarget=traceQueue.shift(); traceStart(); }
+  else gotoStep(3);
+}
+
+/* ----- 보스: 단어 조립 ×2 (그래핌 타일) ----- */
+let quizWord=null,quizSlotFill=[],bossDone=0,quizWrongOnce=false;
+function bossStart(){ bossDone=0; bossNextWord(); }
+function bossNextWord(){
+  const gs=planetG();
+  let pool=LV().words.filter(w=>{
+    const tiles=wordTiles(w);
+    return gs.some(g=>tiles.includes(g));
+  });
+  if(!pool.length) pool=LV().words;
+  let pick;
+  do{ pick=pool[Math.floor(Math.random()*pool.length)]; }
+  while(quizWord&&pick.w===quizWord.w&&pool.length>1);
+  quizWord=pick; quizSlotFill=[]; quizWrongOnce=false;
+  renderQuiz();
+  document.getElementById('quizFeedback').textContent='';
+  document.getElementById('quizFeedback').className='quiz-feedback';
+  document.getElementById('bossProgress').textContent=`보스 단어 ${bossDone+1} / 2`;
+}
+function renderQuiz(){
+  const q=quizWord, tiles=wordTiles(q);
+  document.getElementById('quizPic').textContent=q.emoji;
+  document.getElementById('quizKo').textContent=q.ko;
+  document.getElementById('builder').innerHTML=tiles.map((ch,i)=>{
+    const f=quizSlotFill[i];
+    return `<div class="slot ${f?'filled':''}" id="slot${i}"
+      style="${f?'color:'+(G[f]?G[f].color:'#1C2B4A'):''};font-size:${(f||ch).length>1?'34px':'52px'}">${f||''}</div>`;
+  }).join('');
+  const pool=levelGraphemes(STATS.curLevel).filter(k=>!tiles.includes(k));
+  const extra=pool.sort(()=>Math.random()-.5).slice(0,2);
+  const tray=[...new Set([...tiles,...extra])].sort(()=>Math.random()-.5);
+  document.getElementById('tileTray').innerHTML=tray.map(t=>{
+    const col=G[t]?G[t].color:'#3D4E73';
+    return `<button class="tile" style="background:${col};font-size:${t.length>1?'30px':'44px'}"
+      onclick="tapTile(this,'${t}')" ${quizSlotFill.length>=tiles.length?'disabled':''}>${t}</button>`;
+  }).join('');
+}
+/* ===== ①④ 살아있는 글자 + 드래그 앤 드롭 ===== */
+let dragTile=null,dragGhost=null,dragMoved=false,suppressClick=false,tileTimer=null,tileSoundIv=null;
+function tilePress(e,el,t){
+  if(el.disabled) return;
+  dragTile={el,t,sx:e.clientX,sy:e.clientY};
+  dragMoved=false;
+  el.classList.add('live');
+  // 누르고 있으면 글자가 살아서 소리 반복 (Endless Alphabet 방식)
+  tileTimer=setTimeout(()=>{
+    speakEn(G[t]?G[t].say:t,0.78);
+    tileSoundIv=setInterval(()=>speakEn(G[t]?G[t].say:t,0.78),750);
+  },330);
+  window.addEventListener('pointermove',tileMove);
+  window.addEventListener('pointerup',tileUp,{once:true});
+}
+function tileMove(e){
+  if(!dragTile)return;
+  if(!dragMoved && Math.hypot(e.clientX-dragTile.sx,e.clientY-dragTile.sy)>10){
+    dragMoved=true;
+    const r=dragTile.el.getBoundingClientRect();
+    dragGhost=dragTile.el.cloneNode(true);
+    dragGhost.classList.add('drag-ghost');
+    dragGhost.style.width=r.width+'px';dragGhost.style.height=r.height+'px';
+    dragGhost.style.left=r.left+'px';dragGhost.style.top=r.top+'px';
+    document.body.appendChild(dragGhost);
+    dragTile.el.style.opacity=.3;
+  }
+  if(dragGhost){
+    dragGhost.style.left=(e.clientX-dragGhost.offsetWidth/2)+'px';
+    dragGhost.style.top=(e.clientY-dragGhost.offsetHeight*0.6)+'px';
+  }
+}
+function tileUp(e){
+  window.removeEventListener('pointermove',tileMove);
+  clearTimeout(tileTimer); clearInterval(tileSoundIv); tileSoundIv=null;
+  if(dragTile){ dragTile.el.classList.remove('live'); dragTile.el.style.opacity=''; }
+  if(dragGhost){
+    const b=document.getElementById('builder').getBoundingClientRect();
+    const inB=e.clientX>=b.left-30&&e.clientX<=b.right+30&&e.clientY>=b.top-30&&e.clientY<=b.bottom+40;
+    dragGhost.remove(); dragGhost=null;
+    suppressClick=true; setTimeout(()=>suppressClick=false,80);
+    if(inB && dragTile) tapTile(dragTile.el,dragTile.t);
+  }
+  dragTile=null;
+}
+function tapTile(el,t){
+  if(suppressClick) return;
+  const q=quizWord, tiles=wordTiles(q), idx=quizSlotFill.length;
+  if(idx>=tiles.length)return;
+  const correct=tiles[idx];
+  speakEn(G[t]?G[t].say:t,0.7);
+  if(t===correct){
+    comboHit(); buzz(20); if(el) burstFromEl(el,['✨','⭐']);
+    buddyReact('jump');
+    quizSlotFill.push(t);
+    if(G[t]) recordAttempt(t,true);
+    renderQuiz();
+    if(quizSlotFill.length===tiles.length) finishQuizWord();
+  }else{
+    sfx('buzz'); buzz([40,40,40]); comboMiss();
+    buddyReact('sad','다시 들어봐!');
+    if(G[correct]) recordAttempt(correct,false);
+    quizWrongOnce=true;
+    const fb=document.getElementById('quizFeedback');
+    fb.textContent=`앗! 다시 들어봐. "${G[correct]?G[correct].say:correct}" 소리를 찾아!`;
+    fb.className='quiz-feedback bad';
+    setTimeout(()=>speakEn(G[correct]?G[correct].say:correct,0.6),300);
+  }
+}
+function finishQuizWord(){
+  const q=quizWord, tiles=wordTiles(q);
+  tiles.forEach((ch,i)=>{
+    setTimeout(()=>{
+      const el=document.getElementById('slot'+i);
+      if(el)el.classList.add('blend');
+      speakEn(G[ch]?G[ch].say:ch,0.65);
+    },i*550);
+  });
+  setTimeout(()=>{
+    sfx('win'); buzz([60,40,60]);
+    speakEn(q.w+'! '+q.w+'!',0.75);
+    const pic=document.getElementById('quizPic');
+    if(pic){ pic.classList.add('party'); burstFromEl(pic,[q.emoji,q.emoji,'🎉','✨']); setTimeout(()=>pic.classList.remove('party'),700); }
+    const fb=document.getElementById('quizFeedback');
+    fb.textContent=`🎉 ${q.w}! ${q.ko}! 완성!`;
+    fb.className='quiz-feedback good';
+    addStars(quizWrongOnce?1:2);
+    buddyReact('jump','완성!!');
+    // ★ 단어 뜻 연기 장면 (Endless Alphabet 방식)
+    setTimeout(()=>playScene(q), 500);
+    bossDone++;
+    if(bossDone>=2){ setTimeout(planetClear,3300); }
+    else setTimeout(bossNextWord,3500);
+  },tiles.length*550+300);
+}
+function playQuizWord(){
+  if(!quizWord)return;
+  const tiles=wordTiles(quizWord);
+  const parts=tiles.map(ch=>G[ch]?G[ch].say:ch).join('... ');
+  speakEn(parts+'... '+quizWord.w+'!',0.65);
+}
+
+/* ----- 행성 클리어 ----- */
+function planetClear(){
+  const lv=LV(), id=planetId(lv.n,curPlanetIdx);
+  if(!STATS.cleared.includes(id)) STATS.cleared.push(id);
+  saveStats(); addStars(3);
+  const got=clearedInLevel(lv.n);
+  const unlockedBook=lv.books.find(b=>b.need===got);
+  let desc=`${lv.planets[curPlanetIdx].name} 클리어! ${lv.icon} ${lv.collect} 획득!`;
+  if(unlockedBook) desc+=` 📚 새 책 "${unlockedBook.title}" 열림!`;
+  let emoji=lv.icon, title='획득!';
+  if(levelDone(lv.n)){
+    if(lv.n<6){
+      desc=`Lv${lv.n} ${lv.name} 완주! 🌌 다음 은하 "Lv${lv.n+1} ${LEVELS[lv.n].name}"가 열렸어요!`;
+      emoji='🌌'; title=`Lv${lv.n} 은하 정복!`;
+    }else{
+      desc='👑 여섯 은하를 모두 정복! 태림 대원이 집으로 돌아가는 길을 찾았어요! 모든 책이 열렸어요!';
+      emoji='🏆'; title='은하 챔피언!!';
+    }
+  }
+  pendingBonus = lv.planets[curPlanetIdx].g.slice();
+  buddyTransform();
+  showReward(emoji,title,desc);
+  setTimeout(goHome,600);
+}
+
+/* ============================================================
+   이야기 책장 (전 레벨 책)
+============================================================ */
+let curBook=null,curPage=0;
+function allBooks(){ return LEVELS.flatMap(L=>L.books.map(b=>({...b,lv:L.n}))); }
+function renderShelf(){
+  document.getElementById('reader').classList.remove('on');
+  document.getElementById('shelf').innerHTML=allBooks().map((b,i)=>{
+    const open=clearedInLevel(b.lv)>=b.need;
+    return `<button class="book ${open?'':'lockd'}" ${open?'':'disabled'} onclick="openBook(${i})">
+      <div class="cov">${open?b.cover:'🔒'}</div>
+      <div class="bt en">${b.title}</div>
+      <div class="bs">${open?'Lv'+b.lv+' · '+b.pages.length+'쪽 · 탭하면 읽어줘요':'Lv'+b.lv+' 행성 '+b.need+'개 클리어 필요'}</div>
+    </button>`;
+  }).join('');
+}
+function openBook(i){
+  curBook=allBooks()[i]; curPage=0;
+  document.getElementById('reader').classList.add('on');
+  renderPage();
+}
+function renderPage(){
+  const pg=curBook.pages[curPage];
+  document.getElementById('readerScene').textContent=pg.scene;
+  document.getElementById('readerKo').textContent=pg.ko;
+  document.getElementById('readerPage').textContent=`${curBook.title} · ${curPage+1}/${curBook.pages.length}쪽`;
+  document.getElementById('readerLine').innerHTML=pg.words.map((w,i)=>{
+    const isWord=/[a-zA-Z]/.test(w);
+    return isWord
+      ?`<span class="w" id="rw${i}" onclick="readWord(${i})">${w}</span>`
+      :`<span style="color:#3D4E73">${w}</span>`;
+  }).join('');
+}
+function readWord(i){
+  sfx('tap');
+  const w=curBook.pages[curPage].words[i];
+  document.querySelectorAll('.reader .w').forEach(e=>e.classList.remove('lit'));
+  const el=document.getElementById('rw'+i);
+  if(el)el.classList.add('lit');
+  speakEn(w,0.7);
+  const ph=w[0].toLowerCase();
+  if(G[ph])recordAttempt(ph,true);
+  setTimeout(()=>{if(el)el.classList.remove('lit');},900);
+}
+function readerReadAll(){
+  const words=curBook.pages[curPage].words;
+  let delay=0;
+  words.forEach((w,i)=>{
+    if(!/[a-zA-Z]/.test(w))return;
+    setTimeout(()=>readWord(i),delay);
+    delay+=1100;
+  });
+}
+function readerPrev(){ if(curPage>0){curPage--;renderPage();} }
+function readerNext(){
+  if(curPage<curBook.pages.length-1){curPage++;renderPage();}
+  else{addStars(2);showReward('📚','다 읽었다!',`"${curBook.title}" 완독! 별 2개 획득!`);renderShelf();}
+}
+</script>
+
+
+<script>
+/* ============================================================
+   공통: 모달 / 보상 / 대시보드 / 리포트
+============================================================ */
+function openModal(id){
+  if(id==='robotModal') renderRobotModal();
+  document.getElementById(id).classList.add('on');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+function saveKey(){
+  const v=document.getElementById('apiKeyInput').value.trim();
+  if(v) localStorage.setItem('openai_api_key',v);
+  alert('✅ 저장됐어요!'); closeModal('settingsModal');
+}
+function resetStats(){
+  if(!confirm('정말 모든 학습 데이터(진행/별/통계)를 초기화할까요?')) return;
+  localStorage.removeItem(STAT_KEY);
+  STATS=loadStats(); rolloverSession(); goHome(); closeModal('settingsModal');
+}
+function showReward(emoji,title,desc){
+  sfx('win'); buzz([80,50,80,50,120]);
+  document.getElementById('rewardEmoji').textContent=emoji;
+  document.getElementById('rewardTitle').textContent=title;
+  document.getElementById('rewardDesc').textContent=desc;
+  document.getElementById('rewardPop').classList.add('on');
+  confetti();
+}
+function closeReward(){
+  document.getElementById('rewardPop').classList.remove('on');
+  if(pendingBonus){ const t=pendingBonus; pendingBonus=null; startBubbleBonus(t); }
+}
+function confetti(){
+  const layer=document.getElementById('confettiLayer');
+  const emo=['⭐','🎉','✨','🟡','🔵','💚','🚀','🪐'];
+  for(let i=0;i<36;i++){
+    const d=document.createElement('div');
+    d.className='confetti'; d.textContent=emo[Math.floor(Math.random()*emo.length)];
+    d.style.left=Math.random()*100+'vw';
+    d.style.animationDuration=(1.8+Math.random()*1.6)+'s';
+    d.style.animationDelay=(Math.random()*.5)+'s';
+    layer.appendChild(d);
+    setTimeout(()=>d.remove(),4200);
+  }
+}
+function renderDash(){
+  const g=document.getElementById('dashGrid'); if(!g) return;
+  g.innerHTML = levelGraphemes(STATS.curLevel).map(k=>{
+    const acc=phAccuracy(k), p=STATS.phonemes[k]||{};
+    return `<div class="dash-cell ${p.mastered?'done':''}">
+      <div class="ph" style="color:${G[k].color};font-size:${k.length>2?'15px':k.length>1?'19px':'24px'}">${k.replace('_','-')}${p.mastered?' 🏅':''}</div>
+      <div class="pct">${G[k].emoji} ${acc===null?'—':acc+'%'}</div>
+      <div class="mini"><i style="width:${acc??0}%"></i></div>
+    </div>`;
+  }).join('');
+  document.getElementById('starBank').textContent=STATS.stars;
+}
+function openReport(){
+  const body=document.getElementById('reportBody');
+  const lv=LV(), keys=levelGraphemes(lv.n);
+  let weakest=null, weakestAcc=101;
+  let h=`<div style="font-size:14px;color:#3D4E73;margin-bottom:8px">Lv${lv.n} ${lv.name} 기준</div>`;
+  h+=keys.map(k=>{
+    const p=STATS.phonemes[k]||{att:0,cor:0}, acc=phAccuracy(k);
+    if(acc!==null&&acc<weakestAcc&&!p.mastered){weakest=k;weakestAcc=acc;}
+    return `<div class="report-row">
+      <div class="ph" style="color:${G[k].color};font-size:${k.length>1?'17px':'24px'}">${k.replace('_','-')}</div>
+      <div class="bar"><i style="width:${acc??0}%;${acc!==null&&acc<60?'background:#FF6B6B':''}"></i></div>
+      <div class="num">${acc===null?'기록 없음':acc+'% ('+p.cor+'/'+p.att+')'}${p.mastered?' 🏅':''}</div>
+    </div>`;
+  }).join('');
+  let tip='아직 학습 기록이 부족해요. 행성 미션부터 시작해보세요!';
+  if(weakest){
+    tip=`<b>${weakest.replace('_','-')}</b> (${G[weakest].word}, ${G[weakest].ko}) 소리가 가장 약해요 (${weakestAcc}%). `+
+        `풍선 게임과 AI 소리봇이 자동으로 이 소리를 더 자주 연습시키고 있어요. `+
+        `"${G[weakest].action}" 동작과 함께 해보세요!`;
+  } else if(keys.every(k=>STATS.phonemes[k]&&STATS.phonemes[k].mastered)){
+    tip=`🎉 Lv${lv.n}의 모든 소리를 숙달했어요!`+(lv.n<6?` Lv${lv.n+1}로 넘어갈 준비 완료!`:' 전 과정 완주!');
+  }
+  h+=`<div class="report-tip">💡 ${tip}</div>`;
+  h+=`<div class="report-tip" style="background:#EAF4FF">📐 숙달: 하루 3회+ 시도일 정답률 80% × 2일 → 🏅 · 진행: ${lv.collect} ${clearedInLevel(lv.n)}/${lv.planets.length} · ⭐ ${STATS.stars}개 · 전체 행성 ${STATS.cleared.length}/${LEVELS.reduce((a,L)=>a+L.planets.length,0)}</div>`;
+  body.innerHTML=h;
+  openModal('reportModal');
+}
+
+/* ============================================================
+   AI 소리봇 — OpenAI Realtime (transformer v21 검증 패턴)
+============================================================ */
+const RT_MODEL='gpt-realtime-2';
+let rtDc=null,rtPc=null,rtStream=null,rtActive=false,rtBotSpeaking=false;
+let rtCurBot='',rtStarN=0,rtCycleStarN=0;
+let rtResponseActive=false,rtLastBotEnd=0,rtUserSpoke=false;
+let rtFirstResponseReceived=false,rtRetryTimer=null;
+let rtCurrentTarget=null;
+
+function rtKey(){ return localStorage.getItem('openai_api_key')||''; }
+function rtSetStatus(t){ const el=document.getElementById('rtStatus'); if(el)el.textContent=t; }
+function rtSetCurrent(t){ const el=document.getElementById('rtCurrent'); if(el)el.textContent=t; }
+function rtUpdateDots(n){
+  const el=document.getElementById('rtDots'); if(!el)return;
+  const f=Math.min(n,5);
+  el.textContent='●'.repeat(f)+'○'.repeat(Math.max(0,5-f))+' ('+f+'/5)';
+}
+function rtInstructions(){
+  const lv=LV(), keys=levelGraphemes(lv.n);
+  const weak=weakPhonemes(lv.n);
+  const focus=weak.length?weak.slice(0,3):keys.slice(0,3);
+  const focusDesc=focus.map(k=>`${k} (${G[k].say}, ${G[k].word}=${G[k].ko})`).join(' / ');
+  const mastered=keys.filter(k=>STATS.phonemes[k]&&STATS.phonemes[k].mastered);
+  const cleared=`Lv${lv.n} 행성 ${clearedInLevel(lv.n)}/${lv.planets.length} 클리어`;
+  const lvWords=LV().words.slice(0,12).map(w=>w.w).join(', ');
+  return `너는 '소리봇 박사'라는 다정한 로켓 수리 박사 로봇이야. 6살 한국 아이 태림이가 소리 행성에서 로켓 부품을 모으는 모험 중이고, 너는 발음 연습을 도와주는 동료야.
+
+[세계관] 태림이의 로봇이 소리 행성에 불시착했고, 소리 미션을 깨면 로켓 부품을 얻어. 너는 수리 박사로서 "이 소리를 마스터하면 로켓이 더 빨리 고쳐질 거야!" 같은 모험 톤으로 말해.
+지금까지 클리어한 행성: ${cleared}
+
+[이번 레벨: Lv${lv.n} ${lv.name}] 가르칠 소리: ${keys.join(', ')} — 이 레벨 밖의 소리는 가르치지 마.
+${mastered.length?`숙달한 소리: ${mastered.join(', ')} (복습은 가볍게)`:''}
+
+[★ 오늘의 집중 소리 — 데이터 분석 결과 약한 순서]
+${focusDesc}
+
+[가르치는 순서 — 한 사이클]
+1) 음소: "s! 스네이크의 sss! 뱀처럼 스스스~ 따라 해봐, sss!"
+2) 단어: "sat! 앉았다는 sat! sat! 앉았다는 sat! 따라 해봐, sat!"
+3) 블렌딩(가끔): "s...a...t... 합치면 sat! 따라 해봐, sat!"
+※ 조립 단어는 이번 레벨 단어들: ${lvWords} 등
+
+[★★ 영어+한국어 2번씩 ★★] 영어 소리/단어와 한국어 뜻을 반드시 2번씩 짝지어 말해.
+
+[★★★ 절대 규칙 — 기다리기 ★★★]
+1. 한 턴에 소리/단어 1개만 → "따라 해봐!" → 반드시 멈춰.
+2. 태림이가 말할 때까지 무한히 기다려. 절대 먼저 말 걸지 마.
+3. 따라 말하면 → 짧게 칭찬 → 다음. 한 턴 최대 12초.
+
+[5번 사이클] 같은 소리/단어 5번 (태림2→엄마1→태림2). 5번 채우면 보상 자동. "와~ 로켓 에너지 충전!" 하고 다음 소리로.
+
+[발음 피드백] 살짝 달라도 먼저 칭찬 → 한 번만 부드럽게 교정.
+[칭찬] "Awesome!" "Perfect!" "삐빕! 멋져!" 가끔 "삐빕!" 효과음. 상표/캐릭터 이름 금지.`;
+}
+function rtClearRetry(){ if(rtRetryTimer){clearTimeout(rtRetryTimer);rtRetryTimer=null;} }
+function rtArmFirstResponseRetry(){
+  rtClearRetry();
+  rtRetryTimer=setTimeout(()=>{
+    if(!rtActive||!rtDc||rtDc.readyState!=='open')return;
+    if(rtFirstResponseReceived||rtBotSpeaking||rtResponseActive)return;
+    console.warn('[RT] 첫 응답 6초 없음 → 1회 재시도');
+    try{rtDc.send(JSON.stringify({type:'response.create'}));rtResponseActive=true;}catch(e){}
+  },6000);
+}
+function rtDetectTarget(text){
+  const t=(text||'').toLowerCase();
+  for(const w of LV().words){ if(t.includes(w.w)){ const tl=wordTiles(w); return tl.find(x=>G[x])||null; } }
+  const keys=levelGraphemes(STATS.curLevel).sort((a,b)=>b.length-a.length);
+  for(const k of keys){ const re=new RegExp('\\b'+k.replace('_','.')+'\\b'); if(re.test(t)) return k; }
+  return null;
+}
+function rtTriggerCycleComplete(){
+  if(rtResponseActive) return;
+  console.log('[RT] ⭐×5 → 보상!');
+  showReward('🔋','로켓 에너지 충전!','소리봇과 5번 따라 말하기 성공! 별 5개!');
+  addStars(5);
+  try{
+    rtDc.send(JSON.stringify({type:'conversation.item.create',item:{type:'message',role:'user',content:[{type:'input_text',
+      text:'(시스템) 태림이가 5번 다 따라했어! 🎉 "와~ 로켓 에너지 충전 완료! 삐빕! 최고야 태림아!" 크게 축하해. 다음은 직전과 다른 소리/단어 (약한 소리 우선). 영어+한국어 2번씩, 한 개만 가르치고 멈춰.'}]}}));
+    rtDc.send(JSON.stringify({type:'response.create'}));
+    rtResponseActive=true;
+  }catch(e){console.error('[RT] 사이클 메시지 실패:',e);}
+  rtCycleStarN=0; rtUpdateDots(0);
+}
+async function rtToggle(){
+  if(rtActive) return rtStop();
+  const k=rtKey();
+  if(!k){ openModal('settingsModal'); return; }
+  const btn=document.getElementById('rtBtn');
+  btn.disabled=true; btn.textContent='연결 중...';
+  try{
+    rtStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    rtSetStatus('소리봇 박사 부르는 중... 🤖');
+    const tkR=await fetch('https://api.openai.com/v1/realtime/client_secrets',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+k,'Content-Type':'application/json'},
+      body:JSON.stringify({session:{type:'realtime',model:RT_MODEL,audio:{output:{voice:'ash'}}}})
+    });
+    if(!tkR.ok) throw new Error('토큰 발급 실패: '+tkR.status);
+    const tkD=await tkR.json();
+    const ek=tkD.value||(tkD.client_secret&&tkD.client_secret.value);
+    if(!ek) throw new Error('토큰 없음');
+    rtPc=new RTCPeerConnection();
+    rtStream.getTracks().forEach(t=>rtPc.addTrack(t,rtStream));
+    rtDc=rtPc.createDataChannel('oai-events');
+    document.getElementById('rtBotAudio');
+    rtPc.ontrack=e=>{document.getElementById('rtBotAudio').srcObject=e.streams[0];};
+    rtDc.onopen=()=>{
+      console.log('[RT] 연결됨');
+      rtActive=true; rtStarN=0; rtCycleStarN=0;
+      rtUserSpoke=false; rtFirstResponseReceived=false;
+      rtSetCurrent('준비됐어요! 🎤'); rtUpdateDots(0);
+      rtDc.send(JSON.stringify({type:'session.update',session:{
+        type:'realtime',
+        instructions:rtInstructions(),
+        audio:{
+          input:{
+            turn_detection:{type:'server_vad',threshold:0.5,prefix_padding_ms:300,silence_duration_ms:1500,
+              interrupt_response:false,create_response:true},
+            transcription:{model:'whisper-1'}
+          },
+          output:{voice:'ash',speed:0.9}
+        }
+      }}));
+      setTimeout(()=>{
+        const weak=weakPhonemes();
+        const first=weak.length?weak[0]:levelGraphemes(STATS.curLevel)[0];
+        const p=G[first];
+        rtSetCurrent(p.say+'!');
+        rtDc.send(JSON.stringify({type:'conversation.item.create',item:{type:'message',role:'user',content:[{type:'input_text',
+          text:`[시작] 짧게 모험 톤으로 인사하고 첫 소리 "${first}"를 가르쳐. 예시: "삐빕! 태림 대원! 나는 소리봇 박사야! 로켓을 고치려면 이 소리가 필요해! ${p.say}! ${p.word}의 ${first}! ${p.say}! ${p.word}의 ${first}! ${p.action} 따라 해봐, ${p.say}!" — 영어+한국어 2번씩. 한 턴만 말하고 멈춰서 기다려.`}]}}));
+        rtDc.send(JSON.stringify({type:'response.create'}));
+        rtResponseActive=true;
+        rtArmFirstResponseRetry();
+      },800);
+      btn.textContent='■ 그만하기'; btn.className='rt-btn stop'; btn.disabled=false;
+      rtSetStatus('소리봇이 말하는 중... 🤖');
+    };
+    rtCurBot='';
+    rtDc.onmessage=e=>{
+      const ev=JSON.parse(e.data);
+      switch(ev.type){
+        case 'response.created':
+          rtBotSpeaking=true; rtResponseActive=true; rtFirstResponseReceived=true;
+          rtCurBot=''; rtSetStatus('소리봇이 말하는 중... 🤖');
+          break;
+        case 'response.output_audio_transcript.delta':
+        case 'response.audio_transcript.delta':
+          rtCurBot+=(ev.delta||'');
+          rtBotSpeaking=true; rtResponseActive=true; rtFirstResponseReceived=true;
+          rtClearRetry();
+          try{
+            const m=rtCurBot.match(/[A-Za-z][a-zA-Z ,'!?.]{1,60}[.!?]/g);
+            if(m&&m.length) rtSetCurrent(m[m.length-1].trim());
+          }catch(e){}
+          break;
+        case 'response.output_audio_transcript.done':
+        case 'response.audio_transcript.done':
+          if(rtCurBot.trim()){
+            console.log('[RT] 봇:',rtCurBot);
+            const tgt=rtDetectTarget(rtCurBot);
+            if(tgt) rtCurrentTarget=tgt;
+            const eng=rtCurBot.match(/[a-zA-Z][a-zA-Z !,'.?]{1,60}/g);
+            if(eng&&eng.length){
+              const best=eng.sort((a,b)=>b.length-a.length)[0].trim();
+              if(best.length>1) rtSetCurrent(best.slice(0,60));
+            }
+            const koEl=document.getElementById('rtKorean');
+            if(koEl) koEl.textContent=rtCurBot.trim().slice(0,120);
+          } else {
+            console.warn('[RT] transcript.done인데 rtCurBot 빔 — delta 누락 가능');
+          }
+          rtCurBot=''; rtBotSpeaking=false;
+          rtSetStatus('태림이 차례! 🎤 따라 말해봐~');
+          break;
+        case 'response.done':
+          rtBotSpeaking=false; rtResponseActive=false; rtLastBotEnd=Date.now();
+          rtFirstResponseReceived=true;
+          rtSetStatus('태림이 차례! 🎤 따라 말해봐~');
+          if(rtCycleStarN>=5&&rtDc&&rtDc.readyState==='open'){
+            setTimeout(()=>rtTriggerCycleComplete(),100);
+          }
+          break;
+        case 'input_audio_buffer.speech_started':
+          rtUserSpoke=true; rtSetStatus('듣고 있어요... 👂'); break;
+        case 'input_audio_buffer.speech_stopped':
+          rtSetStatus('생각하는 중... 💭'); break;
+        case 'conversation.item.input_audio_transcription.completed':
+        case 'input_audio_transcription.completed':
+          rtUserSpoke=true; rtStarN++; rtCycleStarN++;
+          rtUpdateDots(rtCycleStarN);
+          {
+            const sEl=document.getElementById('rtStars');
+            if(sEl) sEl.textContent='⭐'.repeat(Math.min(rtStarN,10))+(rtStarN>10?' +'+(rtStarN-10):'');
+          }
+          if(ev.transcript){
+            console.log('[RT] 태림('+rtCycleStarN+'/5):',ev.transcript);
+            if(rtCurrentTarget){
+              const t=ev.transcript.toLowerCase();
+              const p=G[rtCurrentTarget];
+              const ok=t.includes(rtCurrentTarget.replace('_',''))||(p&&t.includes(p.word))||t.length>0;
+              recordAttempt(rtCurrentTarget,ok);
+            }
+          }
+          if(rtCycleStarN>=5&&rtDc&&rtDc.readyState==='open'){
+            rtTriggerCycleComplete();
+          }
+          break;
+        case 'error':{
+          console.error('[RT] 서버 오류:',ev.error);
+          const eMsg=ev.error&&ev.error.message?ev.error.message:'';
+          if(eMsg.includes('active response')||eMsg.includes('already has')){rtResponseActive=true;break;}
+          break;
+        }
+        case 'session.created': case 'session.updated': case 'rate_limits.updated':
+        case 'conversation.item.created': case 'response.output_item.added':
+        case 'response.output_item.done': case 'response.content_part.added':
+        case 'response.content_part.done': case 'response.audio.delta':
+        case 'response.audio.done': case 'response.output_audio.delta':
+        case 'response.output_audio.done': case 'input_audio_buffer.committed':
+        case 'input_audio_buffer.cleared':
+          break;
+        default:
+          if(ev.type&&ev.type.includes('transcript')){
+            console.warn('[RT] ⚠️ 미처리 transcript 이벤트:',ev.type,ev);
+          }
+          break;
+      }
+    };
+    rtDc.onclose=()=>{
+      console.warn('[RT] 데이터 채널 닫힘');
+      if(rtActive){rtStop();rtSetStatus('⚠️ 연결이 끊겼어요! 다시 시작해주세요.');}
+    };
+    rtPc.oniceconnectionstatechange=()=>{
+      console.log('[RT] ICE:',rtPc.iceConnectionState);
+      if(rtPc.iceConnectionState==='disconnected'||rtPc.iceConnectionState==='failed'){
+        if(rtActive){rtStop();rtSetStatus('⚠️ 연결이 끊겼어요!');}
+      }
+    };
+    const offer=await rtPc.createOffer();
+    await rtPc.setLocalDescription(offer);
+    const sdpR=await fetch('https://api.openai.com/v1/realtime/calls?model='+RT_MODEL,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+ek,'Content-Type':'application/sdp'},
+      body:offer.sdp
+    });
+    if(!sdpR.ok) throw new Error('SDP 실패: '+sdpR.status);
+    const ans=await sdpR.text();
+    await rtPc.setRemoteDescription({type:'answer',sdp:ans});
+    rtSetStatus('소리봇 박사를 부르는 중... 🤖');
+  }catch(e){
+    console.error('[RT] 오류:',e);
+    alert('연결 실패: '+e.message+'\n\n⚙️ 설정에서 OpenAI API 키를 확인해주세요.');
+    const b2=document.getElementById('rtBtn');
+    b2.textContent='🎤 소리봇 부르기'; b2.className='rt-btn'; b2.disabled=false;
+    rtCleanup();
+  }
+}
+function rtStop(){
+  rtCleanup();
+  rtSetStatus('연습 끝! 또 하고 싶으면 소리봇을 불러요 🤖');
+  const btn=document.getElementById('rtBtn');
+  btn.textContent='🎤 소리봇 부르기'; btn.className='rt-btn'; btn.disabled=false;
+}
+function rtCleanup(){
+  rtActive=false; rtBotSpeaking=false; rtResponseActive=false;
+  rtClearRetry();
+  if(rtDc){try{rtDc.close();}catch(e){} rtDc=null;}
+  if(rtPc){try{rtPc.close();}catch(e){} rtPc=null;}
+  if(rtStream){rtStream.getTracks().forEach(t=>t.stop()); rtStream=null;}
+}
+
+/* ===== INIT ===== */
+(function(){
+  // 별빛 배경
+  const sf=document.getElementById('starfield');
+  for(let i=0;i<46;i++){
+    const s=document.createElement('i');
+    s.style.left=Math.random()*100+'vw';
+    s.style.top=Math.random()*100+'vh';
+    s.style.animationDelay=(Math.random()*3)+'s';
+    s.style.transform='scale('+(0.5+Math.random())+')';
+    sf.appendChild(s);
+  }
+  document.getElementById('apiKeyInput').value=rtKey();
+  // 첫 터치에서 오디오 컨텍스트 활성화 (모바일 자동재생 정책)
+  const unlock=()=>{ actx(); document.removeEventListener('touchstart',unlock); document.removeEventListener('mousedown',unlock); };
+  document.addEventListener('touchstart',unlock,{once:true});
+  document.addEventListener('mousedown',unlock,{once:true});
+  document.querySelectorAll('.modal-bg').forEach(m=>{
+    m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on');});
+  });
+  goHome();
+})();
+</script>
+
+</body>
+</html>
