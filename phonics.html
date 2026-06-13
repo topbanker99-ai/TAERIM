@@ -807,9 +807,31 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
     <h3>⚙️ 설정</h3>
     <label>OpenAI API 키 (AI 소리봇용)</label>
     <input type="password" id="apiKeyInput" placeholder="sk-...">
-    <div class="btn-row" style="margin-top:14px;justify-content:flex-start">
-      <button class="pill mint" onclick="saveKey()">💾 저장</button>
+
+    <div style="margin-top:18px;padding-top:16px;border-top:2px dashed #C9DCF5">
+      <label style="font-size:15px;color:#1C2B4A;font-weight:700;font-family:'Jua'">🔊 자연스러운 발음 (ElevenLabs)</label>
+      <div style="font-size:13px;color:#3D4E73;margin:4px 0 10px;font-family:'Noto Sans KR';line-height:1.6">
+        켜면 사람 같은 음성으로 읽어줘요. <b>한 번 받은 소리는 저장</b>돼서 다시 들을 땐 요금이 안 나가요.
+        끄면 무료 브라우저 음성을 써요.
+      </div>
+      <label>ElevenLabs API 키</label>
+      <input type="password" id="elKeyInput" placeholder="ElevenLabs 키 (sk_...)">
+      <label>음성 ID (비워두면 기본 'Sarah')</label>
+      <input type="text" id="elVoiceInput" placeholder="EXAVITQu4vr4xnSDxMaL">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;font-family:'Jua';color:#1C2B4A;font-size:14px">
+        <input type="checkbox" id="elEnabledChk" style="width:20px;height:20px"> ElevenLabs 음성 켜기
+      </label>
+      <div class="btn-row" style="margin-top:10px;justify-content:flex-start">
+        <button class="pill mint" onclick="saveElevenLabs()">💾 발음 설정 저장</button>
+        <button class="pill" style="background:#3FA7FF" onclick="prewarmNow()">⚡ 미리 받아두기</button>
+      </div>
+      <div id="cacheInfo" style="font-size:12px;color:#3D4E73;margin-top:8px;font-family:'Noto Sans KR'"></div>
+    </div>
+
+    <div class="btn-row" style="margin-top:18px;padding-top:16px;border-top:2px dashed #C9DCF5;justify-content:flex-start">
+      <button class="pill mint" onclick="saveKey()">💾 소리봇 키 저장</button>
       <button class="pill" style="background:#3D4E73" onclick="resetStats()">🗑 학습 데이터 초기화</button>
+      <button class="pill" style="background:#FF8FB1" onclick="clearTtsCache()">🧹 음성 캐시 비우기</button>
     </div>
   </div>
 </div>
@@ -868,7 +890,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
 
 
 <script>
-console.log('%cPHONICS BUILD v13 — 모음발음 정확화·6세 속도·통단어 색구분·책 미리보기','color:#0a0;font-weight:bold;font-size:16px');
+console.log('%cPHONICS BUILD v14 — 소리봇 mini + ElevenLabs 자연발음(캐싱으로 요금절약)','color:#0a0;font-weight:bold;font-size:16px');
 
 /* ===== 터치 피드백: 효과음(WebAudio) + 진동 + 파티클 ===== */
 let _actx=null;
@@ -1405,21 +1427,123 @@ function weakPhonemes(lvN){
     .filter(o=>!o.m).sort((a,b)=>a.acc-b.acc).map(o=>o.k);
 }
 
-/* ===== TTS ===== */
+/* ===== TTS: ElevenLabs(캐싱) 우선 + 브라우저 폴백 =====
+   ★ 요금 폭탄 방지: 한 번 받은 음성은 IndexedDB에 영구 저장 → 같은 소리는 재호출 안 함.
+     우리 앱 소리는 종류가 정해져 있어(46그래핌+단어들) 한 번씩만 받으면 그 뒤 무료 재생. */
+const EL_VOICE_DEFAULT = 'EXAVITQu4vr4xnSDxMaL'; // ElevenLabs 'Sarah' (밝고 또렷한 여성, 키즈 친화)
+const EL_MODEL = 'eleven_turbo_v2_5';            // 빠르고 저렴한 모델
+function elKey(){ return localStorage.getItem('el_api_key')||''; }
+function elVoice(){ return localStorage.getItem('el_voice_id')||EL_VOICE_DEFAULT; }
+function elEnabled(){ return localStorage.getItem('el_enabled')==='1' && !!elKey(); }
+
+// --- IndexedDB 캐시 (오디오 blob 영구 저장) ---
+let _db=null;
+function elDB(){
+  return new Promise((res,rej)=>{
+    if(_db) return res(_db);
+    const r=indexedDB.open('phx_tts',1);
+    r.onupgradeneeded=e=>{ e.target.result.createObjectStore('clips'); };
+    r.onsuccess=e=>{ _db=e.target.result; res(_db); };
+    r.onerror=e=>rej(e);
+  });
+}
+async function elCacheGet(key){
+  try{ const db=await elDB();
+    return await new Promise((res)=>{ const t=db.transaction('clips').objectStore('clips').get(key);
+      t.onsuccess=()=>res(t.result||null); t.onerror=()=>res(null); });
+  }catch(e){ return null; }
+}
+async function elCacheSet(key,blob){
+  try{ const db=await elDB();
+    db.transaction('clips','readwrite').objectStore('clips').put(blob,key);
+  }catch(e){}
+}
+function elCacheKey(text){ return elVoice()+'|'+text; }
+
+// --- 브라우저 음성 (폴백) : 좋은 음성 우선 선택 ---
 let enVoice=null;
 function pickVoice(){
   const vs=speechSynthesis.getVoices();
-  enVoice=vs.find(v=>/en[-_]US/i.test(v.lang)&&/female|samantha|zira|aria/i.test(v.name))
-    ||vs.find(v=>/en[-_]US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
+  // 자연스러운 음성 우선순위 (윈도우/애플/구글 고품질 → 일반 → 아무 영어)
+  enVoice=
+     vs.find(v=>/en[-_]US/i.test(v.lang)&&/(natural|aria|jenny|guy|sara|samantha|ava|allison|online)/i.test(v.name))
+   ||vs.find(v=>/en[-_]GB/i.test(v.lang)&&/(natural|libby|sonia|ryan|online)/i.test(v.name))
+   ||vs.find(v=>/^en/i.test(v.lang)&&/google/i.test(v.name))
+   ||vs.find(v=>/en[-_]US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
 }
 if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged=pickVoice; pickVoice(); }
-function speakEn(t,rate){
+function browserSpeak(t,rate){
   try{
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(t);
-    if(enVoice)u.voice=enVoice; u.lang='en-US'; u.rate=rate||0.78; u.pitch=1.1;
+    if(enVoice)u.voice=enVoice; u.lang='en-US'; u.rate=rate||0.78; u.pitch=1.08;
     speechSynthesis.speak(u);
   }catch(e){}
+}
+
+// --- ElevenLabs 재생 (캐시 우선) ---
+let _curAudio=null;
+async function elSpeak(text, rate){
+  const key=elCacheKey(text);
+  let blob=await elCacheGet(key);
+  if(!blob){
+    // 캐시에 없을 때만 API 호출 (= 과금). 이후 영구 저장돼 재호출 없음.
+    try{
+      const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+elVoice()+'?optimize_streaming_latency=2',{
+        method:'POST',
+        headers:{'xi-api-key':elKey(),'Content-Type':'application/json','Accept':'audio/mpeg'},
+        body:JSON.stringify({text, model_id:EL_MODEL,
+          voice_settings:{stability:0.45, similarity_boost:0.8, style:0.1, use_speaker_boost:true}})
+      });
+      if(!r.ok){ throw new Error('EL '+r.status); }
+      blob=await r.blob();
+      elCacheSet(key, blob);
+    }catch(e){
+      console.warn('[ElevenLabs] 실패 → 브라우저 음성 사용:', e.message);
+      browserSpeak(text, rate); return;
+    }
+  }
+  try{
+    if(_curAudio){ _curAudio.pause(); _curAudio=null; }
+    const url=URL.createObjectURL(blob);
+    const a=new Audio(url);
+    a.playbackRate = rate ? Math.max(0.7, Math.min(1, rate+0.18)) : 0.95; // rate 보정(0.6→0.78 등)
+    _curAudio=a;
+    a.onended=()=>URL.revokeObjectURL(url);
+    a.play().catch(()=>{ browserSpeak(text, rate); });
+  }catch(e){ browserSpeak(text, rate); }
+}
+
+// --- 통합 진입점: 앱 전체가 이 함수만 호출 ---
+function speakEn(t,rate){
+  if(elEnabled()) elSpeak(t, rate);
+  else browserSpeak(t, rate);
+}
+
+// --- 자주 쓰는 소리 미리 캐싱 (선택): 현재 레벨 그래핌+단어를 백그라운드로 ---
+async function elPrewarm(){
+  if(!elEnabled()) return;
+  const items=new Set();
+  try{
+    const keys=levelGraphemes(STATS.curLevel);
+    keys.forEach(k=>{ const g=G[k]; if(g){ items.add(g.word); } });
+    LV().words.slice(0,12).forEach(w=>items.add(w.w));
+  }catch(e){}
+  let done=0;
+  for(const txt of items){
+    const key=elCacheKey(txt);
+    if(!(await elCacheGet(key))){
+      try{
+        const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+elVoice(),{
+          method:'POST',headers:{'xi-api-key':elKey(),'Content-Type':'application/json','Accept':'audio/mpeg'},
+          body:JSON.stringify({text:txt,model_id:EL_MODEL,voice_settings:{stability:0.45,similarity_boost:0.8}})
+        });
+        if(r.ok){ elCacheSet(key, await r.blob()); done++; }
+        await new Promise(s=>setTimeout(s,160)); // 레이트리밋 여유
+      }catch(e){ break; }
+    }
+  }
+  if(done) console.log('[ElevenLabs] 미리 캐싱 완료:',done,'개');
 }
 
 /* ============================================================
@@ -2143,7 +2267,48 @@ function readerNext(){
 ============================================================ */
 function openModal(id){
   if(id==='robotModal') renderRobotModal();
+  if(id==='settingsModal'){
+    document.getElementById('apiKeyInput').value = localStorage.getItem('openai_api_key')||'';
+    document.getElementById('elKeyInput').value = elKey();
+    document.getElementById('elVoiceInput').value = localStorage.getItem('el_voice_id')||'';
+    document.getElementById('elEnabledChk').checked = localStorage.getItem('el_enabled')==='1';
+    updateCacheInfo();
+  }
   document.getElementById(id).classList.add('on');
+}
+function saveElevenLabs(){
+  const k=document.getElementById('elKeyInput').value.trim();
+  const v=document.getElementById('elVoiceInput').value.trim();
+  const on=document.getElementById('elEnabledChk').checked;
+  if(k) localStorage.setItem('el_api_key',k); else localStorage.removeItem('el_api_key');
+  if(v) localStorage.setItem('el_voice_id',v); else localStorage.removeItem('el_voice_id');
+  localStorage.setItem('el_enabled', on?'1':'0');
+  if(on && !k){ alert('ElevenLabs 키를 입력해주세요!'); return; }
+  alert(on ? '✅ ElevenLabs 음성이 켜졌어요! (소리는 한 번씩만 받아 저장돼요)' : '브라우저 음성을 사용해요.');
+  // 켜면 즉시 테스트 + 미리받기
+  if(on){ speakEn('Hello! Let us learn phonics!',0.9); elPrewarm(); }
+  updateCacheInfo();
+}
+function prewarmNow(){
+  if(!elEnabled()){ alert('먼저 ElevenLabs를 켜고 저장해주세요!'); return; }
+  alert('현재 레벨 소리를 미리 받아둘게요. 잠시 후 캐시 개수가 늘어요.');
+  elPrewarm().then(updateCacheInfo);
+}
+async function updateCacheInfo(){
+  const el=document.getElementById('cacheInfo'); if(!el) return;
+  try{
+    const db=await elDB();
+    const cnt=await new Promise(res=>{ const t=db.transaction('clips').objectStore('clips').count();
+      t.onsuccess=()=>res(t.result); t.onerror=()=>res(0); });
+    el.textContent = elEnabled()
+      ? `💾 저장된 음성: ${cnt}개 — 이 소리들은 다시 들어도 요금이 안 나가요.`
+      : `(브라우저 음성 사용 중) 저장된 음성: ${cnt}개`;
+  }catch(e){ el.textContent=''; }
+}
+async function clearTtsCache(){
+  if(!confirm('저장된 음성을 모두 지울까요? (다시 들으면 ElevenLabs에서 새로 받아요)')) return;
+  try{ const db=await elDB(); db.transaction('clips','readwrite').objectStore('clips').clear(); }catch(e){}
+  alert('음성 캐시를 비웠어요.'); updateCacheInfo();
 }
 function closeModal(id){ document.getElementById(id).classList.remove('on'); }
 function saveKey(){
@@ -2224,7 +2389,7 @@ function openReport(){
 /* ============================================================
    AI 소리봇 — OpenAI Realtime (transformer v21 검증 패턴)
 ============================================================ */
-const RT_MODEL='gpt-realtime-2';
+const RT_MODEL='gpt-realtime-mini';
 let rtDc=null,rtPc=null,rtStream=null,rtActive=false,rtBotSpeaking=false;
 let rtCurBot='',rtStarN=0,rtCycleStarN=0;
 let rtResponseActive=false,rtLastBotEnd=0,rtUserSpoke=false;
@@ -2547,6 +2712,7 @@ function rtCleanup(){
     sf.appendChild(s);
   }
   document.getElementById('apiKeyInput').value=rtKey();
+  if(elEnabled()) setTimeout(elPrewarm, 1500);
   // 첫 터치에서 오디오 컨텍스트 활성화 (모바일 자동재생 정책)
   const unlock=()=>{ actx(); document.removeEventListener('touchstart',unlock); document.removeEventListener('mousedown',unlock); };
   document.addEventListener('touchstart',unlock,{once:true});
