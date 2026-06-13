@@ -664,6 +664,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
     <div class="mission-head">
       <button class="back-btn" onclick="goHome()">← 맵으로</button>
       <h2 id="planetTitle">🪐 s 행성</h2>
+      <button class="back-btn" id="askBotBtn" style="background:#FFF6DC;color:#B07900" onclick="askBotForPlanet()">🤖 소리봇에게 발음 물어보기</button>
       <div class="step-dots">
         <div class="step-dot" id="stepDot0">🔊</div>
         <div class="step-dot" id="stepDot1">🎈</div>
@@ -844,7 +845,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
 
 
 <script>
-console.log('%cPHONICS BUILD v10 — 시안2 관제실 레이아웃 (여정트랙+격납고+와이드)','color:#0a0;font-weight:bold;font-size:16px');
+console.log('%cPHONICS BUILD v11 — TTS음소 정확화 + 소리봇 행성연동 + 발음 3단계 채점','color:#0a0;font-weight:bold;font-size:16px');
 
 /* ===== 터치 피드백: 효과음(WebAudio) + 진동 + 파티클 ===== */
 let _actx=null;
@@ -982,7 +983,7 @@ function startBubbleBonus(targets){
   document.getElementById('bonusTarget').textContent=targets.map(x=>x.replace('_','-')).join(' ');
   bonusScore=0;
   document.getElementById('bonusScore').textContent='+0 ⭐';
-  speakEn(targets.map(t=>G[t]?G[t].say:t).join('... '),0.7);
+  speakEn(targets.map(t=>ttsPhon(t)).join('... '),0.7);
   const pool=levelGraphemes(STATS.curLevel);
   let elapsed=0;
   const DUR=10000;
@@ -1107,6 +1108,33 @@ const G = {
 /* ============================================================
    6단계 레벨 커리큘럼
 ============================================================ */
+/* TTS 전용 음소 발음표 — 영어 음성엔진이 음소를 최대한 정확히 내도록 음차.
+   (화면 표시는 G.action/word 그대로, 소리 재생만 이 표 사용) */
+const PHON = {
+  s:'sss',a:'aah',t:'tuh',p:'puh',i:'ih',n:'nnn',
+  c:'kuh',k:'kuh',e:'eh',h:'huh',r:'rrr',m:'mmm',d:'duh',g:'guh',o:'awe',u:'uh',
+  l:'lll',f:'fff',b:'buh',j:'juh',z:'zzz',w:'wuh',v:'vvv',y:'yuh',x:'ks',qu:'kwuh',
+  sh:'shh',ch:'chuh',th:'thuh',ck:'kuh',ng:'nng',ll:'lll',ss:'sss',ff:'fff',
+  st:'stuh',sp:'spuh',tr:'truh',fl:'fluh',nd:'nduh',mp:'mmp',
+  a_e:'ay',i_e:'eye',o_e:'oh',u_e:'yoo',
+  ee:'ee',ai:'ay',ay:'ay',oa:'oh',oo:'ooo',
+  the:'thuh',you:'yoo',is:'iz',to:'too',and:'and',I:'eye'
+};
+// 단독 음소가 또렷이 안 나는 그래핌(모음·이중자/블렌드·트리키)은 단어로 보강
+const PHON_WORDSAFE = new Set(['a','e','i','o','u','ng','nd','mp','sh','ch','th','st','sp','tr','fl','a_e','i_e','o_e','u_e','ee','ai','ay','oa','oo','the','you','is','to','and','I','x','qu']);
+function ttsPhon(k){ return PHON[k] || (G[k]?G[k].say:k); }
+// 음소를 들려줄 때: 단독으로 또렷한 건 음소만, 아니면 "음소 + 예시단어"로
+function speakPhon(k, times){
+  const g=G[k]; if(!g){ speakEn(k,0.7); return; }
+  const ph=ttsPhon(k);
+  if(PHON_WORDSAFE.has(k)){
+    speakEn(ph+'... '+g.word+'!', 0.68);
+  }else{
+    const n=times||3;
+    speakEn(Array(n).fill(ph).join(', '), 0.7);
+  }
+}
+
 const LEVELS = [
   {n:1, name:'첫 소리 은하', icon:'🔩', collect:'로켓 부품', items:['🔩','⚙️','🛞','🔋','📡','🪟'],
    planets:[
@@ -1345,7 +1373,15 @@ function showScreen(id){
 }
 function goHome(){ showBuddy(false); comboMiss(); renderHome(); showScreen('screenHome'); }
 function goStory(){ showBuddy(false); renderShelf(); showScreen('screenStory'); }
-function goAI(){ showBuddy(false); showScreen('screenAI'); }
+function goAI(){
+  showBuddy(false); showScreen('screenAI');
+  const st=document.getElementById('rtStatus');
+  if(st){
+    st.textContent = rtFocusG
+      ? `🤖 "${rtFocusG.map(x=>x.replace('_','-')).join(', ')}" 소리를 소리봇과 연습해요! 🎤 버튼을 눌러요`
+      : '🤖 로켓 수리 박사 소리봇과 소리 연습을 해요';
+  }
+}
 
 function selectLevel(n){
   // 모든 은하 선택 가능 (첫 행성 맛보기). 진행 잠금은 행성 단위에서 처리.
@@ -1655,8 +1691,14 @@ function gotoStep(n){
   if(n===2) traceStartQueue();
   if(n===3) bossStart();
 }
-function meetPlay(){ const g=G[curG]; speakEn(g.say+', '+g.say+', '+g.say,0.7); }
-function meetWord(){ const g=G[curG]; speakEn(g.say+'... '+g.word+'! '+g.word+'!',0.75); }
+function meetPlay(){ speakPhon(curG, 3); }
+// 현재 행성의 소리를 들고 AI 소리봇으로 이동 → 소리봇이 그 소리를 집중적으로 듣고 교정
+function askBotForPlanet(){
+  rtFocusG = planetG().slice();
+  sfx('ding');
+  goAI();
+}
+function meetWord(){ const g=G[curG]; speakEn(ttsPhon(curG)+'... '+g.word+'! '+g.word+'!',0.75); }
 
 /* ----- 풍선 (5문제, 행성 그래핌 + 레벨 약점 적응) ----- */
 let balN=0,balCorrect=0,balAnswer=null,balBusy=false;
@@ -1684,7 +1726,7 @@ function balloonNext(){
 function balloonPlaySound(){
   if(!balAnswer)return;
   const g=G[balAnswer];
-  speakEn(g.say+'! '+g.say+'! '+g.word+'!',0.72);
+  speakEn(ttsPhon(balAnswer)+'! '+ttsPhon(balAnswer)+'! '+g.word+'!',0.72);
 }
 function balloonTap(el,k){
   if(balBusy)return;
@@ -1696,7 +1738,7 @@ function balloonTap(el,k){
     if(bh){ bh.textContent=G[k].emoji+' '+G[k].word+'!'; setTimeout(()=>{bh.textContent='';},900); }
     recordAttempt(balAnswer,true);
     balCorrect++; balN++;
-    speakEn('Yes! '+G[k].say+'!',0.85);
+    speakEn('Yes! '+ttsPhon(k)+'!',0.85);
     setTimeout(balloonNext,650);
   }else{
     el.classList.add('shake');
@@ -1704,7 +1746,7 @@ function balloonTap(el,k){
     sfx('buzz'); buzz([40,40,40]); comboMiss();
     buddyReact('sad','한 번 더!');
     recordAttempt(balAnswer,false);
-    speakEn(G[balAnswer].say,0.65);
+    speakPhon(balAnswer,2);
   }
 }
 
@@ -1786,7 +1828,7 @@ function traceDone(){
   const btn=document.getElementById('traceDoneBtn'); if(btn) burstFromEl(btn,['✏️','✨','⭐']);
   recordAttempt(traceTarget,true);
   addStars(1);
-  speakEn(G[traceTarget].say+'! Good job!',0.85);
+  speakEn(ttsPhon(traceTarget)+'! Good job!',0.85);
   if(traceQueue.length){ traceTarget=traceQueue.shift(); traceStart(); }
   else gotoStep(3);
 }
@@ -1837,8 +1879,8 @@ function tilePress(e,el,t){
   el.classList.add('live');
   // 누르고 있으면 글자가 살아서 소리 반복 (Endless Alphabet 방식)
   tileTimer=setTimeout(()=>{
-    speakEn(G[t]?G[t].say:t,0.78);
-    tileSoundIv=setInterval(()=>speakEn(G[t]?G[t].say:t,0.78),750);
+    speakEn(ttsPhon(t),0.78);
+    tileSoundIv=setInterval(()=>speakEn(ttsPhon(t),0.78),750);
   },330);
   window.addEventListener('pointermove',tileMove);
   window.addEventListener('pointerup',tileUp,{once:true});
@@ -1878,7 +1920,7 @@ function tapTile(el,t){
   const q=quizWord, tiles=wordTiles(q), idx=quizSlotFill.length;
   if(idx>=tiles.length)return;
   const correct=tiles[idx];
-  speakEn(G[t]?G[t].say:t,0.7);
+  speakEn(ttsPhon(t),0.7);
   if(t===correct){
     comboHit(); buzz(20); if(el) burstFromEl(el,['✨','⭐']);
     buddyReact('jump');
@@ -1892,9 +1934,9 @@ function tapTile(el,t){
     if(G[correct]) recordAttempt(correct,false);
     quizWrongOnce=true;
     const fb=document.getElementById('quizFeedback');
-    fb.textContent=`앗! 다시 들어봐. "${G[correct]?G[correct].say:correct}" 소리를 찾아!`;
+    fb.textContent=`앗! 다시 들어봐. "${ttsPhon(correct)}" 소리를 찾아!`;
     fb.className='quiz-feedback bad';
-    setTimeout(()=>speakEn(G[correct]?G[correct].say:correct,0.6),300);
+    setTimeout(()=>speakPhon(correct,2),300);
   }
 }
 function finishQuizWord(){
@@ -1903,7 +1945,7 @@ function finishQuizWord(){
     setTimeout(()=>{
       const el=document.getElementById('slot'+i);
       if(el)el.classList.add('blend');
-      speakEn(G[ch]?G[ch].say:ch,0.65);
+      speakEn(ttsPhon(ch),0.65);
     },i*550);
   });
   setTimeout(()=>{
@@ -1926,7 +1968,7 @@ function finishQuizWord(){
 function playQuizWord(){
   if(!quizWord)return;
   const tiles=wordTiles(quizWord);
-  const parts=tiles.map(ch=>G[ch]?G[ch].say:ch).join('... ');
+  const parts=tiles.map(ch=>ttsPhon(ch)).join('... ');
   speakEn(parts+'... '+quizWord.w+'!',0.65);
 }
 
@@ -2109,6 +2151,7 @@ let rtCurBot='',rtStarN=0,rtCycleStarN=0;
 let rtResponseActive=false,rtLastBotEnd=0,rtUserSpoke=false;
 let rtFirstResponseReceived=false,rtRetryTimer=null;
 let rtCurrentTarget=null;
+let rtFocusG=null;  // 행성에서 소리봇 진입 시 집중할 소리들
 
 function rtKey(){ return localStorage.getItem('openai_api_key')||''; }
 function rtSetStatus(t){ const el=document.getElementById('rtStatus'); if(el)el.textContent=t; }
@@ -2121,8 +2164,12 @@ function rtUpdateDots(n){
 function rtInstructions(){
   const lv=LV(), keys=levelGraphemes(lv.n);
   const weak=weakPhonemes(lv.n);
-  const focus=weak.length?weak.slice(0,3):keys.slice(0,3);
-  const focusDesc=focus.map(k=>`${k} (${G[k].say}, ${G[k].word}=${G[k].ko})`).join(' / ');
+  // 행성에서 진입했으면 그 행성 소리를 최우선, 아니면 약점 소리
+  const focus = rtFocusG && rtFocusG.length ? rtFocusG.slice() : (weak.length?weak.slice(0,3):keys.slice(0,3));
+  const focusDesc=focus.map(k=>`"${k.replace('_','-')}" 소리(발음 가이드: ${ttsPhon(k)}, 예시단어: ${G[k].word}=${G[k].ko})`).join(' / ');
+  const focusLine = (rtFocusG&&rtFocusG.length)
+    ? `\n[★★ 지금 태림이가 "${focus.map(x=>x.replace('_','-')).join(', ')}" 행성에 있어! 이 소리만 집중해서 가르치고 발음을 들어줘! ★★]`
+    : '';
   const mastered=keys.filter(k=>STATS.phonemes[k]&&STATS.phonemes[k].mastered);
   const cleared=`Lv${lv.n} 행성 ${clearedInLevel(lv.n)}/${lv.planets.length} 클리어`;
   const lvWords=LV().words.slice(0,12).map(w=>w.w).join(', ');
@@ -2134,8 +2181,8 @@ function rtInstructions(){
 [이번 레벨: Lv${lv.n} ${lv.name}] 가르칠 소리: ${keys.join(', ')} — 이 레벨 밖의 소리는 가르치지 마.
 ${mastered.length?`숙달한 소리: ${mastered.join(', ')} (복습은 가볍게)`:''}
 
-[★ 오늘의 집중 소리 — 데이터 분석 결과 약한 순서]
-${focusDesc}
+[★ 집중 소리 — 데이터 분석 결과]
+${focusDesc}${focusLine}
 
 [가르치는 순서 — 한 사이클]
 1) 음소: "s! 스네이크의 sss! 뱀처럼 스스스~ 따라 해봐, sss!"
@@ -2154,6 +2201,39 @@ ${focusDesc}
 
 [발음 피드백] 살짝 달라도 먼저 칭찬 → 한 번만 부드럽게 교정.
 [칭찬] "Awesome!" "Perfect!" "삐빕! 멋져!" 가끔 "삐빕!" 효과음. 상표/캐릭터 이름 금지.`;
+}
+/* ===== 발음 3단계 채점 (정확/비슷/다시) =====
+   Whisper가 6세 영어를 완벽히 인식 못 하므로, 격려 우선의 관대한 휴리스틱 */
+function gradePronunciation(k, transcript){
+  const t=(transcript||'').toLowerCase().replace(/[^a-z\s]/g,'');
+  if(!t.trim()) return 'retry';
+  const g=G[k]; if(!g) return 'close';
+  const key=k.replace('_','');
+  const word=g.word.toLowerCase();
+  // 정확: 타깃 글자/소리나 예시단어가 인식 결과에 포함
+  if(t.includes(key) || t.includes(word)) return 'good';
+  // 비슷: 첫 글자(자음)가 맞거나, 핵심 자모가 겹침
+  const firstCh=key[0];
+  const words=t.split(/\s+/);
+  if(words.some(w=>w && w[0]===firstCh)) return 'close';
+  // 음소 일부라도 겹치면 비슷
+  if([...key].some(ch=>'bcdfghjklmnpqrstvwxyz'.includes(ch) && t.includes(ch))) return 'close';
+  return 'close'; // 뭔가 말했으면 기본 격려 (retry는 무음일 때만)
+}
+function showPronFeedback(grade){
+  const cur=document.getElementById('rtCurrent');
+  const ko=document.getElementById('rtKorean');
+  if(grade==='good'){
+    if(ko){ ko.textContent='⭐ Perfect! 정확해요!'; ko.style.color='#28C7A0'; }
+    sfx('ding'); buzz(25); comboHit && comboHit();
+    const c=document.querySelector('.rt-card'); if(c){ c.style.borderColor='#28C7A0'; setTimeout(()=>c.style.borderColor='',900); }
+  }else if(grade==='close'){
+    if(ko){ ko.textContent='👍 거의 다 됐어요! 한 번 더 또박또박!'; ko.style.color='#FFB400'; }
+    sfx('tap');
+  }else{
+    if(ko){ ko.textContent='🎤 소리가 잘 안 들렸어요. 다시 말해볼까요?'; ko.style.color='#FF6B6B'; }
+  }
+  setTimeout(()=>{ if(ko) ko.style.color=''; }, 2000);
 }
 function rtClearRetry(){ if(rtRetryTimer){clearTimeout(rtRetryTimer);rtRetryTimer=null;} }
 function rtArmFirstResponseRetry(){
@@ -2227,11 +2307,11 @@ async function rtToggle(){
       }}));
       setTimeout(()=>{
         const weak=weakPhonemes();
-        const first=weak.length?weak[0]:levelGraphemes(STATS.curLevel)[0];
+        const first=(rtFocusG&&rtFocusG.length)?rtFocusG[0]:(weak.length?weak[0]:levelGraphemes(STATS.curLevel)[0]);
         const p=G[first];
-        rtSetCurrent(p.say+'!');
+        rtSetCurrent(ttsPhon(first)+'!');
         rtDc.send(JSON.stringify({type:'conversation.item.create',item:{type:'message',role:'user',content:[{type:'input_text',
-          text:`[시작] 짧게 모험 톤으로 인사하고 첫 소리 "${first}"를 가르쳐. 예시: "삐빕! 태림 대원! 나는 소리봇 박사야! 로켓을 고치려면 이 소리가 필요해! ${p.say}! ${p.word}의 ${first}! ${p.say}! ${p.word}의 ${first}! ${p.action} 따라 해봐, ${p.say}!" — 영어+한국어 2번씩. 한 턴만 말하고 멈춰서 기다려.`}]}}));
+          text:`[시작] 짧게 모험 톤으로 인사하고 첫 소리 "${first}"를 가르쳐. 예시: "삐빕! 태림 대원! 나는 소리봇 박사야! 로켓을 고치려면 이 소리가 필요해! ${ttsPhon(first)}! ${p.word}의 ${first.replace('_','-')}! ${ttsPhon(first)}! ${p.word}의 ${first.replace('_','-')}! ${p.action} 따라 해봐, ${ttsPhon(first)}!" — 영어+한국어 2번씩. 한 턴만 말하고 멈춰서 기다려.`}]}}));
         rtDc.send(JSON.stringify({type:'response.create'}));
         rtResponseActive=true;
         rtArmFirstResponseRetry();
@@ -2299,10 +2379,11 @@ async function rtToggle(){
           if(ev.transcript){
             console.log('[RT] 태림('+rtCycleStarN+'/5):',ev.transcript);
             if(rtCurrentTarget){
-              const t=ev.transcript.toLowerCase();
-              const p=G[rtCurrentTarget];
-              const ok=t.includes(rtCurrentTarget.replace('_',''))||(p&&t.includes(p.word))||t.length>0;
-              recordAttempt(rtCurrentTarget,ok);
+              const grade=gradePronunciation(rtCurrentTarget, ev.transcript);
+              // 데이터: 정확/비슷=정답으로(격려), 다시=시도만(오답 기록 안 해 좌절 방지)
+              if(grade==='good') recordAttempt(rtCurrentTarget,true);
+              else if(grade==='close') recordAttempt(rtCurrentTarget,true);
+              showPronFeedback(grade);
             }
           }
           if(rtCycleStarN>=5&&rtDc&&rtDc.readyState==='open'){
@@ -2360,6 +2441,7 @@ async function rtToggle(){
   }
 }
 function rtStop(){
+  rtFocusG=null;
   rtCleanup();
   rtSetStatus('연습 끝! 또 하고 싶으면 소리봇을 불러요 🤖');
   const btn=document.getElementById('rtBtn');
