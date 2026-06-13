@@ -756,8 +756,8 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
       <button class="back-btn" onclick="goHome()">← 맵으로</button>
       <h2>📚 이야기 책장</h2>
     </div>
-    <div class="shelf" id="shelf"></div>
     <div class="reader" id="reader">
+      <button class="back-btn" onclick="closeReader()" style="margin-bottom:14px">← 책장으로</button>
       <div class="book-intro" id="bookIntro"></div>
       <div class="scene" id="readerScene">🐶</div>
       <div class="line" id="readerLine"></div>
@@ -770,6 +770,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
       </div>
       <div class="game-score" id="readerPage"></div>
     </div>
+    <div class="shelf" id="shelf"></div>
   </div>
 </section>
 
@@ -890,7 +891,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
 
 
 <script>
-console.log('%cPHONICS BUILD v15 — 이야기책 전체 개방','color:#0a0;font-weight:bold;font-size:16px');
+console.log('%cPHONICS BUILD v16 — 책 펼침 표시 수정 (누르면 바로 보임)','color:#0a0;font-weight:bold;font-size:16px');
 
 /* ===== 터치 피드백: 효과음(WebAudio) + 진동 + 파티클 ===== */
 let _actx=null;
@@ -2187,6 +2188,7 @@ let curBook=null,curPage=0;
 function allBooks(){ return LEVELS.flatMap(L=>L.books.map(b=>({...b,lv:L.n}))); }
 function renderShelf(){
   document.getElementById('reader').classList.remove('on');
+  document.getElementById('shelf').style.display='';
   document.getElementById('shelf').innerHTML=allBooks().map((b,i)=>{
     const open=true; // 모든 이야기책 처음부터 열림
     return `<button class="book ${open?'':'lockd'}" ${open?'':'disabled'} onclick="openBook(${i})">
@@ -2197,9 +2199,15 @@ function renderShelf(){
     </button>`;
   }).join('');
 }
+function closeReader(){
+  document.getElementById('reader').classList.remove('on');
+  document.getElementById('shelf').style.display='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 function openBook(i){
   curBook=allBooks()[i]; curPage=0;
   document.getElementById('reader').classList.add('on');
+  document.getElementById('shelf').style.display='none';  // 읽는 동안 목록 숨김
   // 이 책에 나오는 통단어(사이트워드) 모으기
   const sights=[...new Set(
     curBook.pages.flatMap(p=>p.words)
@@ -2215,6 +2223,7 @@ function openBook(i){
     intro.classList.remove('on');
   }
   renderPage();
+  window.scrollTo({top:0,behavior:'smooth'});  // 책을 맨 위에서 크게 보여줌
 }
 function renderPage(){
   const pg=curBook.pages[curPage];
