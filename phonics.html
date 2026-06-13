@@ -323,7 +323,14 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:0 18px 5
 .book:hover:not(.lockd){transform:translateY(-4px)}
 .book .cov{font-size:54px}
 .book .bt{font-size:17px;margin-top:6px}
+.book{position:relative}
 .book .bs{font-size:12px;color:#3D4E73;margin-top:3px}
+.ort-tag{
+  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,#3FA7FF,#19B8C4);color:#fff;
+  font-family:'Jua';font-size:11.5px;padding:3px 12px;border-radius:999px;
+  white-space:nowrap;box-shadow:0 2px 0 rgba(0,0,0,.18);
+}
 .book.lockd{opacity:.45;cursor:default;filter:grayscale(.5)}
 .reader{display:none;margin-top:20px;text-align:center}
 .reader.on{display:block;animation:pop .2s}
@@ -337,7 +344,21 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:0 18px 5
 }
 .reader .line .w:hover{background:#FFF6DC}
 .reader .line .w.lit{background:var(--sun);color:#fff;transform:scale(1.08)}
-.reader .ko-line{font-size:15px;color:#3D4E73;margin-bottom:14px}
+.reader .line .w.sight{color:#7C5CFF;border-bottom:3px dotted #B9A6FF}
+.reader .line .w.sight.lit{background:#7C5CFF;color:#fff;border-bottom-color:transparent}
+.reader .ko-line{font-size:15px;color:#3D4E73;margin-bottom:6px}
+.book-intro{
+  background:#F3EEFF;border:2px dashed #B9A6FF;border-radius:16px;
+  padding:12px 16px;margin-bottom:16px;font-family:'Noto Sans KR';font-size:14px;color:#5A4A8A;
+  display:none;line-height:1.6;
+}
+.book-intro.on{display:block}
+.book-intro b{color:#7C5CFF}
+.book-intro .sw{
+  display:inline-block;background:#7C5CFF;color:#fff;font-family:'Baloo 2';font-weight:800;
+  border-radius:8px;padding:2px 10px;margin:2px 3px;font-size:14px;
+}
+.read-help{font-size:13px;color:#3D4E73;font-family:"Noto Sans KR";margin-bottom:12px;opacity:.85}
 .page-nav{display:flex;gap:12px;justify-content:center;margin-top:10px}
 
 /* ===== AI 소리봇 ===== */
@@ -737,9 +758,11 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
     </div>
     <div class="shelf" id="shelf"></div>
     <div class="reader" id="reader">
+      <div class="book-intro" id="bookIntro"></div>
       <div class="scene" id="readerScene">🐶</div>
       <div class="line" id="readerLine"></div>
       <div class="ko-line" id="readerKo"></div>
+      <div class="read-help" id="readHelp">👆 단어를 하나씩 누르면 소리내어 읽어줘요</div>
       <div class="page-nav">
         <button class="pill" onclick="readerPrev()">← 이전</button>
         <button class="pill sun" onclick="readerReadAll()">🔊 전체 읽기</button>
@@ -845,7 +868,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
 
 
 <script>
-console.log('%cPHONICS BUILD v11 — TTS음소 정확화 + 소리봇 행성연동 + 발음 3단계 채점','color:#0a0;font-weight:bold;font-size:16px');
+console.log('%cPHONICS BUILD v13 — 모음발음 정확화·6세 속도·통단어 색구분·책 미리보기','color:#0a0;font-weight:bold;font-size:16px');
 
 /* ===== 터치 피드백: 효과음(WebAudio) + 진동 + 파티클 ===== */
 let _actx=null;
@@ -1123,15 +1146,25 @@ const PHON = {
 // 단독 음소가 또렷이 안 나는 그래핌(모음·이중자/블렌드·트리키)은 단어로 보강
 const PHON_WORDSAFE = new Set(['a','e','i','o','u','ng','nd','mp','sh','ch','th','st','sp','tr','fl','a_e','i_e','o_e','u_e','ee','ai','ay','oa','oo','the','you','is','to','and','I','x','qu']);
 function ttsPhon(k){ return PHON[k] || (G[k]?G[k].say:k); }
-// 음소를 들려줄 때: 단독으로 또렷한 건 음소만, 아니면 "음소 + 예시단어"로
+// 단모음 — 음소 단독은 영어 TTS로 부정확하므로 예시단어로 또박또박 (apple 안에서 정확한 "애" 소리)
+const VOWELS_SHORT = new Set(['a','e','i','o','u']);
+// 통단어(사이트워드) — 소리내기보다 통째로 외우는 단어. 책에서 다른 색으로 표시
+const SIGHT_WORDS = new Set(['the','a','i','is','it','to','and','you','look','who','can','go','oh','no','of','was','said','put','he','she','we','me','my','are','her','his','for','all','they','do']);
+function isSightWord(w){ return SIGHT_WORDS.has((w||'').toLowerCase().replace(/[^a-z]/g,'')); }
+// 음소를 들려줄 때 (6세가 따라하도록 천천히)
 function speakPhon(k, times){
-  const g=G[k]; if(!g){ speakEn(k,0.7); return; }
+  const g=G[k]; if(!g){ speakEn(k,0.62); return; }
   const ph=ttsPhon(k);
-  if(PHON_WORDSAFE.has(k)){
-    speakEn(ph+'... '+g.word+'!', 0.68);
+  if(VOWELS_SHORT.has(k)){
+    // 모음: 예시단어를 천천히 두 번 (정확한 모음 소리는 단어 안에서)
+    speakEn(g.word+'... '+g.word+'!', 0.55);
+  }else if(PHON_WORDSAFE.has(k)){
+    // 이중자음·블렌드·모음팀·트리키: 음소 + 예시단어
+    speakEn(ph+'... '+g.word+'!', 0.6);
   }else{
+    // 또렷한 자음: 음소를 천천히 반복
     const n=times||3;
-    speakEn(Array(n).fill(ph).join(', '), 0.7);
+    speakEn(Array(n).fill(ph).join(',  '), 0.62);
   }
 }
 
@@ -1147,10 +1180,23 @@ const LEVELS = [
      {w:'pan',ko:'프라이팬',emoji:'🍳'},{w:'sip',ko:'홀짝',emoji:'🥤'},{w:'ant',ko:'개미',emoji:'🐜'},
      {w:'nip',ko:'꼬집기',emoji:'🦀'},{w:'pip',ko:'씨앗',emoji:'🌱'}],
    books:[
+     {title:'Look at Tib!',cover:'🤖',ort:true,need:1,pages:[
+       {scene:'🤖',words:['Tib','.'],ko:'로봇 팁이에요.'},
+       {scene:'🤖✨',words:['Tib',',','Tib','!'],ko:'팁, 팁!'},
+       {scene:'👀',words:['Look','!'],ko:'봐요! (look은 통단어로 외워요)'},
+       {scene:'👀🤖',words:['Look','at','Tib','.'],ko:'팁을 봐요.'},
+       {scene:'🤖🪑',words:['Tib','sits','.'],ko:'팁이 앉아요.'},
+       {scene:'🚀🤖',words:['Go',',','Tib',',','go','!'],ko:'가자, 팁, 가자!'}]},
      {title:'Pip!',cover:'🐶',need:2,pages:[
        {scene:'🐶',words:['Pip','sat','.'],ko:'강아지 핍이 앉았어요.'},
        {scene:'🐶🪑',words:['Sit',',','Pip',',','sit','!'],ko:'앉아, 핍, 앉아!'},
        {scene:'🐶🫳',words:['Pat','Pip','.'],ko:'핍을 토닥토닥.'}]},
+     {title:'Who Is It?',cover:'❓',ort:true,need:3,pages:[
+       {scene:'❓',words:['Who','is','it','?'],ko:'누구지? (who는 통단어)'},
+       {scene:'🐶',words:['It','is','Pip','!'],ko:'핍이야!'},
+       {scene:'❓',words:['Who','is','it','?'],ko:'누구지?'},
+       {scene:'🐱',words:['It','is','Nat','!'],ko:'냇이야!'},
+       {scene:'🤖✨',words:['It','is','Tib','!'],ko:'팁이야!'}]},
      {title:'A Nap',cover:'😴',need:4,pages:[
        {scene:'🐱',words:['Nat','sat','.'],ko:'고양이 냇이 앉았어요.'},
        {scene:'🐱💤',words:['Nat','naps','.'],ko:'냇이 낮잠을 자요.'},
@@ -1175,10 +1221,22 @@ const LEVELS = [
      {w:'gum',ko:'껌',emoji:'🍬'},{w:'map',ko:'지도',emoji:'🗺️'},{w:'web',ko:'거미줄',emoji:'🕸️'},
      {w:'yam',ko:'고구마',emoji:'🍠'}],
    books:[
+     {title:'In the Van',cover:'🚐',ort:true,need:2,pages:[
+       {scene:'🚐',words:['A','van','.'],ko:'밴이에요.'},
+       {scene:'🐶🚐',words:['Pip','is','in','the','van','.'],ko:'핍이 밴에 있어요.'},
+       {scene:'🐱🚐',words:['Nat','is','in','the','van','.'],ko:'냇도 밴에 있어요.'},
+       {scene:'🤖🚐',words:['Tib','is','in','the','van','.'],ko:'팁도 밴에 있어요.'},
+       {scene:'🚐💨',words:['Go',',','van',',','go','!'],ko:'가자, 밴, 가자!'}]},
      {title:'A Red Hen',cover:'🐔',need:3,pages:[
        {scene:'🐔',words:['A','red','hen','.'],ko:'빨간 암탉.'},
        {scene:'🐱📦',words:['A','cat','in','a','box','.'],ko:'상자 속 고양이.'},
-       {scene:'🐶💤',words:['The','dog','naps','.'],ko:'강아지가 낮잠 자요. (the는 통째로!)'}]}
+       {scene:'🐶💤',words:['The','dog','naps','.'],ko:'강아지가 낮잠 자요. (the는 통째로!)'}]},
+     {title:'Fun in the Sun',cover:'☀️',ort:true,need:5,pages:[
+       {scene:'☀️',words:['The','sun','.'],ko:'해님.'},
+       {scene:'🤖☀️',words:['Tib','is','in','the','sun','.'],ko:'팁이 햇빛 속에 있어요.'},
+       {scene:'🐶🏖️',words:['Pip','can','run','.'],ko:'핍이 달려요. (can은 통단어)'},
+       {scene:'🐱🏖️',words:['Nat','can','dig','.'],ko:'냇이 모래를 파요.'},
+       {scene:'🎉☀️',words:['Fun','in','the','sun','!'],ko:'햇빛 속에서 신나요!'}]}
    ]},
   {n:3, name:'쌍둥이 소리 은하', icon:'🗺️', collect:'별지도', items:['🗺️','🗺️','🗺️','🗺️','🗺️','🗺️'],
    planets:[
@@ -1698,7 +1756,11 @@ function askBotForPlanet(){
   sfx('ding');
   goAI();
 }
-function meetWord(){ const g=G[curG]; speakEn(ttsPhon(curG)+'... '+g.word+'! '+g.word+'!',0.75); }
+function meetWord(){
+  const g=G[curG];
+  if(VOWELS_SHORT.has(curG)) speakEn(g.word+'... '+g.word+'!', 0.6);
+  else speakEn(ttsPhon(curG)+'... '+g.word+'! '+g.word+'!', 0.62);
+}
 
 /* ----- 풍선 (5문제, 행성 그래핌 + 레벨 약점 적응) ----- */
 let balN=0,balCorrect=0,balAnswer=null,balBusy=false;
@@ -1725,8 +1787,7 @@ function balloonNext(){
 }
 function balloonPlaySound(){
   if(!balAnswer)return;
-  const g=G[balAnswer];
-  speakEn(ttsPhon(balAnswer)+'! '+ttsPhon(balAnswer)+'! '+g.word+'!',0.72);
+  speakPhon(balAnswer, 2);
 }
 function balloonTap(el,k){
   if(balBusy)return;
@@ -2007,6 +2068,7 @@ function renderShelf(){
   document.getElementById('shelf').innerHTML=allBooks().map((b,i)=>{
     const open=clearedInLevel(b.lv)>=b.need;
     return `<button class="book ${open?'':'lockd'}" ${open?'':'disabled'} onclick="openBook(${i})">
+      ${b.ort?'<span class="ort-tag">📖 First Words</span>':''}
       <div class="cov">${open?b.cover:'🔒'}</div>
       <div class="bt en">${b.title}</div>
       <div class="bs">${open?'Lv'+b.lv+' · '+b.pages.length+'쪽 · 탭하면 읽어줘요':'Lv'+b.lv+' 행성 '+b.need+'개 클리어 필요'}</div>
@@ -2016,18 +2078,35 @@ function renderShelf(){
 function openBook(i){
   curBook=allBooks()[i]; curPage=0;
   document.getElementById('reader').classList.add('on');
+  // 이 책에 나오는 통단어(사이트워드) 모으기
+  const sights=[...new Set(
+    curBook.pages.flatMap(p=>p.words)
+      .filter(w=>/[a-zA-Z]/.test(w) && isSightWord(w))
+      .map(w=>w.toLowerCase().replace(/[^a-z]/g,''))
+  )];
+  const intro=document.getElementById('bookIntro');
+  if(sights.length){
+    intro.innerHTML=`📖 <b>${curBook.title}</b> 읽기 전에! 이 단어들은 소리로 만들지 말고 <b>통째로 외우는 단어</b>예요 (보라색):<br>`
+      +sights.map(w=>`<span class="sw">${w}</span>`).join('');
+    intro.classList.add('on');
+  }else{
+    intro.classList.remove('on');
+  }
   renderPage();
 }
 function renderPage(){
   const pg=curBook.pages[curPage];
+  const intro=document.getElementById('bookIntro');
+  if(intro && curPage>0) intro.classList.remove('on');
   document.getElementById('readerScene').textContent=pg.scene;
   document.getElementById('readerKo').textContent=pg.ko;
   document.getElementById('readerPage').textContent=`${curBook.title} · ${curPage+1}/${curBook.pages.length}쪽`;
   document.getElementById('readerLine').innerHTML=pg.words.map((w,i)=>{
     const isWord=/[a-zA-Z]/.test(w);
-    return isWord
-      ?`<span class="w" id="rw${i}" onclick="readWord(${i})">${w}</span>`
-      :`<span style="color:#3D4E73">${w}</span>`;
+    if(!isWord) return `<span style="color:#3D4E73">${w}</span>`;
+    const sight=isSightWord(w);
+    return `<span class="w ${sight?'sight':''}" id="rw${i}" onclick="readWord(${i})"
+      title="${sight?'통째로 외우는 단어예요':'소리내어 읽는 단어'}">${w}</span>`;
   }).join('');
 }
 function readWord(i){
@@ -2036,10 +2115,10 @@ function readWord(i){
   document.querySelectorAll('.reader .w').forEach(e=>e.classList.remove('lit'));
   const el=document.getElementById('rw'+i);
   if(el)el.classList.add('lit');
-  speakEn(w,0.7);
+  speakEn(w,0.62);
   const ph=w[0].toLowerCase();
   if(G[ph])recordAttempt(ph,true);
-  setTimeout(()=>{if(el)el.classList.remove('lit');},900);
+  setTimeout(()=>{if(el)el.classList.remove('lit');},1000);
 }
 function readerReadAll(){
   const words=curBook.pages[curPage].words;
@@ -2047,7 +2126,7 @@ function readerReadAll(){
   words.forEach((w,i)=>{
     if(!/[a-zA-Z]/.test(w))return;
     setTimeout(()=>readWord(i),delay);
-    delay+=1100;
+    delay+=1400;
   });
 }
 function readerPrev(){ if(curPage>0){curPage--;renderPage();} }
