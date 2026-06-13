@@ -890,7 +890,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
 
 
 <script>
-console.log('%cPHONICS BUILD v14 — 소리봇 mini + ElevenLabs 자연발음(캐싱으로 요금절약)','color:#0a0;font-weight:bold;font-size:16px');
+console.log('%cPHONICS BUILD v15 — 이야기책 전체 개방','color:#0a0;font-weight:bold;font-size:16px');
 
 /* ===== 터치 피드백: 효과음(WebAudio) + 진동 + 파티클 ===== */
 let _actx=null;
@@ -1608,11 +1608,9 @@ function renderHome(){
     </button>`;
   }).join('');
   // 책장 네비
-  const allBooks=LEVELS.flatMap(L=>L.books.map(b=>({...b,lv:L.n})));
-  const unlockedBooks=allBooks.filter(b=>clearedInLevel(b.lv)>=b.need).length;
-  document.getElementById('navStoryDesc').textContent =
-    unlockedBooks===0?'행성을 깨면 이야기 책이 열려요':`읽을 수 있는 책: ${unlockedBooks}권 / ${allBooks.length}권`;
-  document.getElementById('navStory').classList.toggle('lockd',unlockedBooks===0);
+  const allBooksN=LEVELS.flatMap(L=>L.books).length;
+  document.getElementById('navStoryDesc').textContent = `이야기 책 ${allBooksN}권 모두 읽을 수 있어요`;
+  document.getElementById('navStory').classList.remove('lockd');
   renderRobot(); renderDash();
   const st=document.getElementById('streakBank'); if(st) st.textContent=STATS.streak||1;
   // ⑦ 소리 별자리: 숙달한 소리가 별이 되어 빛남
@@ -2190,12 +2188,12 @@ function allBooks(){ return LEVELS.flatMap(L=>L.books.map(b=>({...b,lv:L.n}))); 
 function renderShelf(){
   document.getElementById('reader').classList.remove('on');
   document.getElementById('shelf').innerHTML=allBooks().map((b,i)=>{
-    const open=clearedInLevel(b.lv)>=b.need;
+    const open=true; // 모든 이야기책 처음부터 열림
     return `<button class="book ${open?'':'lockd'}" ${open?'':'disabled'} onclick="openBook(${i})">
       ${b.ort?'<span class="ort-tag">📖 First Words</span>':''}
       <div class="cov">${open?b.cover:'🔒'}</div>
       <div class="bt en">${b.title}</div>
-      <div class="bs">${open?'Lv'+b.lv+' · '+b.pages.length+'쪽 · 탭하면 읽어줘요':'Lv'+b.lv+' 행성 '+b.need+'개 클리어 필요'}</div>
+      <div class="bs">Lv${b.lv} · ${b.pages.length}쪽 · 탭하면 읽어줘요</div>
     </button>`;
   }).join('');
 }
