@@ -347,6 +347,11 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:0 18px 5
 .reader .line .w.sight{color:#7C5CFF;border-bottom:3px dotted #B9A6FF}
 .reader .line .w.sight.lit{background:#7C5CFF;color:#fff;border-bottom-color:transparent}
 .reader .ko-line{font-size:15px;color:#3D4E73;margin-bottom:6px}
+.reader-img{
+  width:100%;max-width:420px;aspect-ratio:1/1;object-fit:cover;
+  border-radius:24px;border:4px solid var(--sun);margin:0 auto 14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+}
 .book-intro{
   background:#F3EEFF;border:2px dashed #B9A6FF;border-radius:16px;
   padding:12px 16px;margin-bottom:16px;font-family:'Noto Sans KR';font-size:14px;color:#5A4A8A;
@@ -759,6 +764,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
     <div class="reader" id="reader">
       <button class="back-btn" onclick="closeReader()" style="margin-bottom:14px">← 책장으로</button>
       <div class="book-intro" id="bookIntro"></div>
+      <img class="reader-img" id="readerImg" alt="" style="display:none">
       <div class="scene" id="readerScene">🐶</div>
       <div class="line" id="readerLine"></div>
       <div class="ko-line" id="readerKo"></div>
@@ -891,7 +897,7 @@ footer{position:relative;z-index:1;text-align:center;font-size:12px;color:rgba(2
 
 
 <script>
-console.log('%cPHONICS BUILD v16 — 책 펼침 표시 수정 (누르면 바로 보임)','color:#0a0;font-weight:bold;font-size:16px');
+console.log('%cPHONICS BUILD v17 — Lv1 그림책 진짜 그림 적용 (Tib·Pip·Nat)','color:#0a0;font-weight:bold;font-size:16px');
 
 /* ===== 터치 피드백: 효과음(WebAudio) + 진동 + 파티클 ===== */
 let _actx=null;
@@ -1204,30 +1210,30 @@ const LEVELS = [
      {w:'nip',ko:'꼬집기',emoji:'🦀'},{w:'pip',ko:'씨앗',emoji:'🌱'}],
    books:[
      {title:'Look at Tib!',cover:'🤖',ort:true,need:1,pages:[
-       {scene:'🤖',words:['Tib','.'],ko:'로봇 팁이에요.'},
-       {scene:'🤖✨',words:['Tib',',','Tib','!'],ko:'팁, 팁!'},
-       {scene:'👀',words:['Look','!'],ko:'봐요! (look은 통단어로 외워요)'},
-       {scene:'👀🤖',words:['Look','at','Tib','.'],ko:'팁을 봐요.'},
-       {scene:'🤖🪑',words:['Tib','sits','.'],ko:'팁이 앉아요.'},
-       {scene:'🚀🤖',words:['Go',',','Tib',',','go','!'],ko:'가자, 팁, 가자!'}]},
+       {scene:'🤖',img:'look_1',words:['Tib','.'],ko:'로봇 팁이에요.'},
+       {scene:'🤖✨',img:'look_2',words:['Tib',',','Tib','!'],ko:'팁, 팁!'},
+       {scene:'👀',img:'look_3',words:['Look','!'],ko:'봐요! (look은 통단어로 외워요)'},
+       {scene:'👀🤖',img:'look_4',words:['Look','at','Tib','.'],ko:'팁을 봐요.'},
+       {scene:'🤖🪑',img:'look_5',words:['Tib','sits','.'],ko:'팁이 앉아요.'},
+       {scene:'🚀🤖',img:'look_6',words:['Go',',','Tib',',','go','!'],ko:'가자, 팁, 가자!'}]},
      {title:'Pip!',cover:'🐶',need:2,pages:[
-       {scene:'🐶',words:['Pip','sat','.'],ko:'강아지 핍이 앉았어요.'},
-       {scene:'🐶🪑',words:['Sit',',','Pip',',','sit','!'],ko:'앉아, 핍, 앉아!'},
-       {scene:'🐶🫳',words:['Pat','Pip','.'],ko:'핍을 토닥토닥.'}]},
+       {scene:'🐶',img:'pip_1',words:['Pip','sat','.'],ko:'강아지 핍이 앉았어요.'},
+       {scene:'🐶🪑',img:'pip_2',words:['Sit',',','Pip',',','sit','!'],ko:'앉아, 핍, 앉아!'},
+       {scene:'🐶🫳',img:'pip_3',words:['Pat','Pip','.'],ko:'핍을 토닥토닥.'}]},
      {title:'Who Is It?',cover:'❓',ort:true,need:3,pages:[
-       {scene:'❓',words:['Who','is','it','?'],ko:'누구지? (who는 통단어)'},
-       {scene:'🐶',words:['It','is','Pip','!'],ko:'핍이야!'},
-       {scene:'❓',words:['Who','is','it','?'],ko:'누구지?'},
-       {scene:'🐱',words:['It','is','Nat','!'],ko:'냇이야!'},
-       {scene:'🤖✨',words:['It','is','Tib','!'],ko:'팁이야!'}]},
+       {scene:'❓',img:'who_1',words:['Who','is','it','?'],ko:'누구지? (who는 통단어)'},
+       {scene:'🐶',img:'who_2',words:['It','is','Pip','!'],ko:'핍이야!'},
+       {scene:'❓',img:'who_3',words:['Who','is','it','?'],ko:'누구지?'},
+       {scene:'🐱',img:'who_4',words:['It','is','Nat','!'],ko:'냇이야!'},
+       {scene:'🤖✨',img:'who_5',words:['It','is','Tib','!'],ko:'팁이야!'}]},
      {title:'A Nap',cover:'😴',need:4,pages:[
-       {scene:'🐱',words:['Nat','sat','.'],ko:'고양이 냇이 앉았어요.'},
-       {scene:'🐱💤',words:['Nat','naps','.'],ko:'냇이 낮잠을 자요.'},
-       {scene:'🤫',words:['Sit','.','Nap','.'],ko:'앉아. 낮잠 자.'}]},
+       {scene:'🐱',img:'nap_1',words:['Nat','sat','.'],ko:'고양이 냇이 앉았어요.'},
+       {scene:'🐱💤',img:'nap_2',words:['Nat','naps','.'],ko:'냇이 낮잠을 자요.'},
+       {scene:'🤫',img:'nap_3',words:['Sit','.','Nap','.'],ko:'앉아. 낮잠 자.'}]},
      {title:'Tap, Tap!',cover:'🍳',need:6,pages:[
-       {scene:'🍳',words:['A','tin','pan','!'],ko:'깡통 프라이팬!'},
-       {scene:'👏🍳',words:['Tap','it','!'],ko:'두드려 봐!'},
-       {scene:'🐶🐱',words:['Pip','taps','.','Nat','taps','.'],ko:'핍이 두드려요. 냇도 두드려요.'}]}
+       {scene:'🍳',img:'tap_1',words:['A','tin','pan','!'],ko:'깡통 프라이팬!'},
+       {scene:'👏🍳',img:'tap_2',words:['Tap','it','!'],ko:'두드려 봐!'},
+       {scene:'🐶🐱',img:'tap_3',words:['Pip','taps','.','Nat','taps','.'],ko:'핍이 두드려요. 냇도 두드려요.'}]}
    ]},
   {n:2, name:'알파벳 은하', icon:'⛽', collect:'연료', items:['⛽','⛽','⛽','⛽','⛽','⛽'],
    planets:[
@@ -1431,6 +1437,7 @@ function weakPhonemes(lvN){
 /* ===== TTS: ElevenLabs(캐싱) 우선 + 브라우저 폴백 =====
    ★ 요금 폭탄 방지: 한 번 받은 음성은 IndexedDB에 영구 저장 → 같은 소리는 재호출 안 함.
      우리 앱 소리는 종류가 정해져 있어(46그래핌+단어들) 한 번씩만 받으면 그 뒤 무료 재생. */
+const IMG_BASE = 'images/';  // GitHub images 폴더 (없으면 이모지로 표시)
 const EL_VOICE_DEFAULT = 'EXAVITQu4vr4xnSDxMaL'; // ElevenLabs 'Sarah' (밝고 또렷한 여성, 키즈 친화)
 const EL_MODEL = 'eleven_turbo_v2_5';            // 빠르고 저렴한 모델
 function elKey(){ return localStorage.getItem('el_api_key')||''; }
@@ -2229,7 +2236,18 @@ function renderPage(){
   const pg=curBook.pages[curPage];
   const intro=document.getElementById('bookIntro');
   if(intro && curPage>0) intro.classList.remove('on');
-  document.getElementById('readerScene').textContent=pg.scene;
+  // 그림이 있으면 그림 표시(로딩 실패 시 이모지로 자동 폴백), 없으면 이모지
+  const imgEl=document.getElementById('readerImg');
+  const sceneEl=document.getElementById('readerScene');
+  if(pg.img){
+    imgEl.onerror=()=>{ imgEl.style.display='none'; sceneEl.style.display=''; sceneEl.textContent=pg.scene; };
+    imgEl.onload=()=>{ imgEl.style.display=''; sceneEl.style.display='none'; };
+    imgEl.src=IMG_BASE+pg.img+'.jpg';
+  }else{
+    imgEl.style.display='none';
+    sceneEl.style.display='';
+    sceneEl.textContent=pg.scene;
+  }
   document.getElementById('readerKo').textContent=pg.ko;
   document.getElementById('readerPage').textContent=`${curBook.title} · ${curPage+1}/${curBook.pages.length}쪽`;
   document.getElementById('readerLine').innerHTML=pg.words.map((w,i)=>{
